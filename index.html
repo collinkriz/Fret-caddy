@@ -92,6 +92,7 @@ button{font:inherit;color:inherit}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .3s ease}
 .eyebrow{font:700 12px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin:0}
 .prompt{font:700 31px/1.04 var(--f-display);margin:6px 0 0;text-wrap:balance}
+.prompt.below{text-align:center;margin:16px 0 0}
 .sub{color:var(--muted);margin:4px 0 0}
 .tipbox{background:var(--accent-soft);border-radius:12px;padding:12px 14px;margin-block:10px 4px}
 .tipbox strong{display:block;font:700 13px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:4px}
@@ -884,7 +885,7 @@ function lessonView(){
     pad=`<div class="pad ${q.grid}">${order.map(p=>`<button class="key ${cls(p===q.ans,fb&&last.v===p)}" data-act="ans" data-v="${p}" ${fb?'disabled':''}>${SH[p]}${q.grid==='all'&&!isNat(p)?`<small>${FL[p]}</small>`:''}</button>`).join('')}</div>`;
   } else if(q.type==='choice'){
     pad=`<div class="pad choice">${q.choices.map((c,i)=>`<button class="key ${cls(c===q.ans,fb&&last.v===i)}" data-act="ans" data-v="${i}" ${fb?'disabled':''}>${c}</button>`).join('')}</div>`;
-  } else if(!fb) pad=`<p class="hint">Tap a fret on the ${SNAME[q.tstr]} string</p>`;
+  } else pad=`<h1 class="prompt below">${q.prompt}</h1>`;
   const praise=['Nice.','Nailed it.','Clean.','Locked in.','That’s the one.','On the money.'];
   const correctTxt=q.type==='name'?nm(q.ans):q.type==='choice'?q.ans:'';
   const sheet=fb?`<div class="sheet ${last.ok?'':'bad'}" role="status" aria-live="polite"><div class="sheet-in">
@@ -900,7 +901,7 @@ function lessonView(){
     ${mid}
     <button class="iconbtn" data-act="tip" aria-pressed="${tipOpen}" aria-label="Show the trick">${I.bulb}</button>${soundBtn()}</div>
     <p class="eyebrow">${it.retry?'Second try':L.mode==='review'?fname+(L.fmt==='clock'?` · ${L.done+1} of ${L.total}`:''):'Level '+(L.li+1)}${fname===lv.title?'':' · '+lv.title}</p>
-    <h1 class="prompt">${q.prompt}</h1>${q.sub?`<p class="sub">${q.sub}</p>`:''}
+    ${q.type==='find'?'':`<h1 class="prompt">${q.prompt}</h1>${q.sub?`<p class="sub">${q.sub}</p>`:''}`}
     ${tipOpen?`<div class="tipbox"><strong>The trick</strong><p>${lv.tip}</p></div>`:''}
     ${nk}${pad}${sheet}`;
 }
@@ -1035,7 +1036,7 @@ function tipsView(){
 /* ---------- render + events ---------- */
 const app=document.getElementById('app'),nav=document.getElementById('nav');
 /* Last-updated stamp: bump UPDATED on every push */
-const UPDATED='2026-11-07T00:07:00-05:00';
+const UPDATED='2026-11-07T00:09:00-05:00';
 const stampHTML=()=>`<div class="stamp">Last updated ${new Date(UPDATED).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Detroit',timeZoneName:'short'})}</div>`;
 function render(toTop){
   const full=['lesson','result','game','gameover'].includes(view);
