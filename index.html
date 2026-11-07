@@ -406,8 +406,6 @@ const XT={
 
 /* ---------- levels ---------- */
 const LEVELS=[
-  {id:'alpha',title:'The musical alphabet',gen:genAlpha,
-   tip:'Notes run A B C D E F G, then start over at A. Most neighbors are two frets apart with a sharp in between. Two pairs break the rule: B–C and E–F sit one fret apart, with no sharp between them.'},
   {id:'lowE',title:'Low E landmarks',gen:()=>genPos('lowE',P(0,[0,3,5,7,8,10,12])),demo:()=>lab(P(0,[0,3,5,7,8,10,12])),
    tip:'Use the dots on your neck as anchors. Low E string: open = E, 3 = G, 5 = A, 7 = B, 8 = C, 10 = D, 12 = E. Anything else is one fret away from one of these.'},
   {id:'aStr',title:'A string landmarks',gen:()=>genPos('aStr',P(1,[0,2,3,5,7,8,10,12])),demo:()=>lab(P(1,[0,2,3,5,7,8,10,12])),
@@ -456,6 +454,8 @@ const KEY='fretcaddy.v1';
 function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return null;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 const S=Object.assign({xp:0,streak:0,last:null,days:[],prog:{},missed:[],sound:true,dly:{last:null,streak:0,best:0,res:{}},dlySp:{last:null,streak:0,best:0,res:{}}},load()||{});
+/* musical-alphabet level retired: drop any of its saved missed questions */
+S.missed=(S.missed||[]).filter(q=>q.lv!=='alpha');
 const ds=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const today=()=>ds(new Date());
 const yday=()=>{const d=new Date();d.setDate(d.getDate()-1);return ds(d);};
@@ -1035,7 +1035,7 @@ function tipsView(){
 /* ---------- render + events ---------- */
 const app=document.getElementById('app'),nav=document.getElementById('nav');
 /* Last-updated stamp: bump UPDATED on every push */
-const UPDATED='2026-11-06T23:30:00-05:00';
+const UPDATED='2026-11-07T00:07:00-05:00';
 const stampHTML=()=>`<div class="stamp">Last updated ${new Date(UPDATED).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Detroit',timeZoneName:'short'})}</div>`;
 function render(toTop){
   const full=['lesson','result','game','gameover'].includes(view);
