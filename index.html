@@ -31,6 +31,7 @@
 body{background:var(--bg);color:var(--fg);font:400 16px/1.45 var(--f-body);-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit}
 .app{max-width:520px;margin:0 auto;padding-inline:16px;padding-block:10px 110px}
+.stamp{text-align:center;font:500 11px var(--f-body);color:var(--muted);opacity:.75;margin:28px 0 4px;letter-spacing:.02em}
 .app.lesson-mode{padding-block-end:24px}
 .app.has-sheet{padding-block-end:230px}
 
@@ -1029,10 +1030,14 @@ function tipsView(){
 
 /* ---------- render + events ---------- */
 const app=document.getElementById('app'),nav=document.getElementById('nav');
+/* Last-updated stamp: bump UPDATED on every push */
+const UPDATED='2026-11-06T23:30:00-05:00';
+const stampHTML=()=>`<div class="stamp">Last updated ${new Date(UPDATED).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Detroit',timeZoneName:'short'})}</div>`;
 function render(toTop){
   const full=['lesson','result','game','gameover'].includes(view);
   app.className='app'+(full?' lesson-mode':'')+(view==='lesson'&&L&&L.state==='feedback'?' has-sheet':'');
   app.innerHTML=view==='home'?homeView():view==='tips'?tipsView():view==='explore'?exploreView():view==='arcade'?arcadeView():view==='game'?gameView():view==='gameover'?gameoverView():view==='lesson'?lessonView():resultView();
+  app.insertAdjacentHTML('beforeend',stampHTML());
   nav.hidden=full;
   const tab=(v,icon,t)=>`<button class="${view===v?'on':''}" data-act="tab" data-v="${v}">${icon}<span>${t}</span></button>`;
   nav.innerHTML=tab('home',I.path,'Learn')+tab('arcade',I.flame,'Arcade')+tab('explore',I.eye,'Free play')+tab('tips',I.book,'Tricks');
