@@ -1,0 +1,1081 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Fret Caddy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one phone-width column. Home = streak card + level path drawn as a rosewood neck with pearl inlays. Lesson = prompt, vertical fretboard, answer pad, feedback sheet. */
+:root{
+  --bg:#eceee8; --surface:#f9faf6; --fg:#1b1f1a; --muted:#5d6559; --line:#d2d7cb;
+  --accent:#a86d14; --accent-deep:#7a4f0d; --accent-soft:#f3e6cc; --on-accent:#fffaf0;
+  --wood:#3a281e; --wood-2:#4d3528; --fret:#cfc8b6; --string:#e6dcb8; --pearl:#f3eee0;
+  --good:#2c7f47; --good-deep:#1d5a31; --good-soft:#dcefdf; --on-good:#ffffff;
+  --bad:#b83a26; --bad-deep:#86281a; --bad-soft:#f6ddd7;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141613; --surface:#1e211c; --fg:#ebeee5; --muted:#9aa294; --line:#323830;
+  --accent:#e0a33f; --accent-deep:#a1701f; --accent-soft:#3a2c14; --on-accent:#1b1307;
+  --wood:#2c1e16; --wood-2:#3b281d; --fret:#aaa392; --string:#cdc19b; --pearl:#ece5d2;
+  --good:#5cc07e; --good-deep:#3a8a55; --good-soft:#1b3123; --on-good:#0d1a11;
+  --bad:#ee6c55; --bad-deep:#a8432f; --bad-soft:#3c1d17; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141613; --surface:#1e211c; --fg:#ebeee5; --muted:#9aa294; --line:#323830;
+  --accent:#e0a33f; --accent-deep:#a1701f; --accent-soft:#3a2c14; --on-accent:#1b1307;
+  --wood:#2c1e16; --wood-2:#3b281d; --fret:#aaa392; --string:#cdc19b; --pearl:#ece5d2;
+  --good:#5cc07e; --good-deep:#3a8a55; --good-soft:#1b3123; --on-good:#0d1a11;
+  --bad:#ee6c55; --bad-deep:#a8432f; --bad-soft:#3c1d17; color-scheme:dark}
+
+body{background:var(--bg);color:var(--fg);font:400 16px/1.45 var(--f-body);-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+.app{max-width:520px;margin:0 auto;padding-inline:16px;padding-block:10px 110px}
+.app.lesson-mode{padding-block-end:24px}
+.app.has-sheet{padding-block-end:230px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:6px 14px}
+.brand{font:800 26px/1 var(--f-display);text-transform:uppercase;letter-spacing:.05em}
+.brand span{color:var(--accent)}
+.stats{display:flex;gap:6px;align-items:center}
+.stat{display:inline-flex;gap:4px;align-items:center;font:700 14px/1 var(--f-mono);font-variant-numeric:tabular-nums;padding:8px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.stat.fire{color:var(--accent)}
+.iconbtn{width:38px;height:38px;flex:none;border-radius:999px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;padding:0}
+.iconbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.today{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:12px}
+.today h1{font:700 30px/1.02 var(--f-display);text-transform:uppercase;margin:0;text-wrap:balance}
+.today p{margin:0;color:var(--muted)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{display:grid;justify-items:center;gap:4px;font:700 11px/1 var(--f-mono);color:var(--muted)}
+.day i{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center}
+.day.on i{background:var(--accent);border-color:var(--accent)}
+.day.now span{color:var(--fg)}
+.ctas{display:grid;gap:10px}
+.note{font:500 12px var(--f-mono)!important}
+
+.btn{font:700 17px/1.2 var(--f-body);padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);min-height:52px;cursor:pointer;box-shadow:0 3px 0 var(--line);text-wrap:balance}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:0 3px 0 var(--accent-deep)}
+.btn.primary:active{box-shadow:0 1px 0 var(--accent-deep)}
+
+.section{font:700 14px/1 var(--f-display);text-transform:uppercase;letter-spacing:.16em;color:var(--muted);margin:28px 0 12px}
+
+.path{list-style:none;margin:0;padding:0;position:relative}
+.path::before{content:"";position:absolute;left:0;top:0;bottom:0;width:52px;background:var(--wood);border-radius:10px}
+.lvl{position:relative}
+.lvl:not(:last-child)::after{content:"";position:absolute;left:0;width:52px;bottom:-1.5px;height:3px;background:var(--fret);z-index:1}
+.lvl-btn{all:unset;box-sizing:border-box;display:grid;grid-template-columns:52px 1fr;gap:14px;align-items:center;width:100%;padding-block:14px;cursor:pointer;position:relative;z-index:2;border-radius:10px}
+.lvl-btn:disabled{cursor:default}
+.lvl-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.inlay{justify-self:center;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--f-mono);background:var(--pearl);color:var(--wood)}
+.lvl.locked .inlay{background:transparent;border:2px dashed var(--fret);color:var(--fret);opacity:.55;width:30px;height:30px}
+.lvl.current .inlay{background:var(--accent);color:var(--on-accent);box-shadow:0 0 0 3px var(--wood),0 0 0 5px var(--accent);animation:pulse 2s ease-in-out infinite}
+.lvl.mastered .inlay{background:var(--accent);color:var(--on-accent)}
+@keyframes pulse{50%{box-shadow:0 0 0 3px var(--wood),0 0 0 8px var(--accent)}}
+.lvl-txt{min-width:0}
+.lvl-title{font:700 17px/1.2 var(--f-body);display:block}
+.lvl.locked .lvl-title{color:var(--muted)}
+.lvl-meta{font:500 12px/1.3 var(--f-mono);color:var(--muted);display:block;margin-top:3px}
+.pips{display:flex;gap:4px;margin-top:7px}
+.pips i{width:24px;height:5px;border-radius:3px;background:var(--line)}
+.pips i.on{background:var(--accent)}
+
+.lhead{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding-block:4px 12px}
+.bar{height:12px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .3s ease}
+.eyebrow{font:700 12px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin:0}
+.prompt{font:700 31px/1.04 var(--f-display);margin:6px 0 0;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0}
+.tipbox{background:var(--accent-soft);border-radius:12px;padding:12px 14px;margin-block:10px 4px}
+.tipbox strong{display:block;font:700 13px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:4px}
+.tipbox p{margin:0}
+
+.neckwrap{display:flex;justify-content:center;margin-block:10px 12px}
+.neck{width:100%;max-width:300px;height:auto;display:block;user-select:none;-webkit-user-select:none}
+.neck.h{max-width:none}
+.seg + .seg{margin-left:6px}
+.neck .wood{fill:var(--wood)}
+.neck .fretw{stroke:var(--fret);stroke-width:2}
+.neck .fretw.f12{stroke-width:3.5}
+.neck .nut{fill:var(--pearl)}
+.neck .inl{fill:var(--pearl);opacity:.5}
+.neck .str{stroke:var(--string)}
+.neck .str.dim{opacity:.28}
+.neck .slab,.neck .fnum{fill:var(--muted);font:700 12px var(--f-mono);text-anchor:middle}
+.neck .slab.hot{fill:var(--accent)}
+.neck .fnum.mk{fill:var(--fg)}
+.neck .hl{fill:var(--accent);opacity:.2}
+.neck .hit{fill:var(--accent);fill-opacity:0;cursor:pointer}
+.neck .hit:hover,.neck .hit:focus-visible{fill-opacity:.28;outline:none}
+.neck .dot circle{fill:var(--accent);stroke:var(--wood);stroke-width:2}
+.neck .dot text{fill:var(--on-accent);font:700 11px var(--f-body);text-anchor:middle}
+.neck .dot.good circle{fill:var(--good)} .neck .dot.good text{fill:var(--on-good)}
+.neck .dot.bad circle{fill:var(--bad)} .neck .dot.bad text{fill:#fff}
+.neck .dot.root circle{fill:var(--pearl)} .neck .dot.root text{fill:var(--wood)}
+.neck .dot.ghost circle{fill:var(--wood-2);stroke:var(--pearl);stroke-dasharray:3 2;stroke-width:1.5} .neck .dot.ghost text{fill:var(--pearl)}
+.neck .dot.map circle{fill:var(--pearl);stroke-width:1.5} .neck .dot.map text{fill:var(--wood);font-size:10px}
+.neck .dot.map.acc circle{fill:var(--wood-2);stroke:var(--fret);stroke-width:1} .neck .dot.map.acc text{fill:var(--pearl);font-size:9px}
+
+.pad{display:grid;gap:8px}
+.pad.nat{grid-template-columns:repeat(7,1fr);gap:6px}
+.pad.all{grid-template-columns:repeat(6,1fr);gap:6px}
+.pad.choice{grid-template-columns:1fr 1fr}
+.key{font:700 22px/1 var(--f-display);min-height:54px;padding:6px 0;border-radius:12px;border:1px solid var(--line);background:var(--surface);box-shadow:0 3px 0 var(--line);cursor:pointer}
+.key:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.pad.all .key{font-size:18px;min-height:56px}
+.key small{display:block;font:500 11px/1.2 var(--f-mono);color:var(--muted);margin-top:3px}
+.pad.choice .key{font:700 17px/1.25 var(--f-body);padding:12px}
+.key:disabled{cursor:default}
+.key.good{background:var(--good-soft);border-color:var(--good);color:var(--good);box-shadow:0 3px 0 var(--good)}
+.key.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);box-shadow:0 3px 0 var(--bad)}
+.key.fade{opacity:.45}
+.hint{font:500 13px var(--f-mono);color:var(--muted);text-align:center;margin:0}
+
+.sheet{position:fixed;left:0;right:0;bottom:0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--good-soft);border-top:2px solid var(--good);z-index:20;animation:up .18s ease-out}
+.sheet.bad{background:var(--bad-soft);border-color:var(--bad)}
+@keyframes up{from{transform:translateY(30%);opacity:.6}}
+.sheet-in{max-width:520px;margin:0 auto;display:grid;gap:10px}
+.sheet h2{margin:0;font:700 26px/1 var(--f-display);text-transform:uppercase;color:var(--good)}
+.sheet.bad h2{color:var(--bad)}
+.sheet p{margin:0}
+.btn.go{background:var(--good);border-color:var(--good);color:var(--on-good);box-shadow:0 3px 0 var(--good-deep)}
+.sheet.bad .btn.go{background:var(--bad);border-color:var(--bad);color:#fff;box-shadow:0 3px 0 var(--bad-deep)}
+
+.intro{display:grid;gap:14px;padding-block:8px}
+.intro .lvno{font:700 13px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0}
+.intro h1{font:800 42px/.98 var(--f-display);text-transform:uppercase;margin:0;text-wrap:balance}
+.intro p.tip{font-size:18px;margin:0;max-width:60ch}
+
+.result{display:grid;gap:16px;padding-block:20px}
+.result h1{font:800 40px/1 var(--f-display);text-transform:uppercase;margin:0}
+.score{font:800 96px/.9 var(--f-display);font-variant-numeric:tabular-nums;color:var(--accent)}
+.score small{font-size:40px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px}
+.tile b{display:block;font:700 26px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.tile span{font:500 11px/1.3 var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.result p{margin:0}
+
+.page-h{font:800 36px/1 var(--f-display);text-transform:uppercase;margin:0 0 4px}
+.daily + .daily{margin-top:10px}
+.daily{margin-top:16px;padding:16px;border-radius:16px;background:var(--wood);color:var(--pearl);display:grid;gap:12px}
+.daily .eyebrow{margin:0}
+.drow{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.dh{margin:4px 0 0;font:800 28px/1 var(--f-display);text-transform:uppercase;text-wrap:balance}
+.dflame{display:grid;justify-items:center;color:var(--accent);flex:none}
+.dflame svg{width:26px;height:26px}
+.dflame b{font:800 30px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.dflame span{font:500 10px var(--f-mono);color:var(--fret);text-transform:uppercase;letter-spacing:.06em}
+.dp{margin:0;color:var(--fret)} .dp b{color:var(--pearl)}
+.dweek{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dday{display:grid;justify-items:center;gap:4px;font:700 11px/1 var(--f-mono);color:var(--fret);padding:6px 0;border-radius:8px;background:var(--wood-2)}
+.dday.on .dstars{color:var(--accent)}
+.dday.now{outline:1.5px solid var(--accent)}
+.dstars{font-size:9px;letter-spacing:-.5px;min-height:11px}
+.dmeta{margin:0;font:500 12px var(--f-mono);color:var(--fret)}
+.daily .btn:not(.primary){background:var(--wood-2);border-color:var(--fret);color:var(--pearl);box-shadow:0 3px 0 #0006}
+.gcards{display:grid;gap:10px;margin-top:0}
+.gcard:first-child{background:var(--surface)!important;border-color:var(--line)!important;color:var(--fg)!important;box-shadow:0 3px 0 var(--line)!important}
+.gcard:first-child .gdesc{color:var(--muted)!important}
+.gcard{display:grid;gap:4px;text-align:left;padding:16px;border-radius:16px;border:1px solid var(--line);background:var(--surface);box-shadow:0 3px 0 var(--line);cursor:pointer}
+.gcard:first-child{background:var(--wood);border-color:var(--wood);color:var(--pearl);box-shadow:0 3px 0 var(--accent-deep)}
+.gcard:first-child .gdesc{color:var(--fret)}
+.gcard:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.gtitle{font:800 28px/1 var(--f-display);text-transform:uppercase}
+.gdesc{color:var(--muted)}
+.gmeta{font:700 12px var(--f-mono);color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.bar.timer i{background:var(--good)}
+.bar.timer i.low{background:var(--bad)}
+.gscore{display:flex;justify-content:space-between;gap:10px;font:500 13px var(--f-mono);color:var(--muted);margin-bottom:10px}
+.gscore b{font:800 20px var(--f-display);color:var(--fg)}
+.gscore .hot{color:var(--accent);font-weight:700}
+.target{color:var(--accent)}
+.gmsg{margin:6px 0 0;font:700 14px/1.3 var(--f-body);min-height:1.3em}
+.gmsg.ok{color:var(--good)} .gmsg.bad{color:var(--bad)}
+.back{border:0;background:transparent;color:var(--accent);font:700 14px var(--f-mono);padding:0 0 8px;cursor:pointer}
+.chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:12px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 0;font:700 17px/1 var(--f-display);cursor:pointer}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.xinfo{display:flex;gap:14px;align-items:center;min-height:84px;margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.xempty{margin:0;color:var(--muted)}
+.xnote{font:800 46px/1 var(--f-display);color:var(--good);min-width:54px;text-align:center}
+.xnote small{display:block;font:500 12px var(--f-mono);color:var(--muted);margin-top:2px}
+.xtxt{display:grid;gap:4px;min-width:0;font-size:14px}
+.xtxt b{font-size:16px}
+.xtxt span{color:var(--muted)}
+.k{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
+.k.bad{background:var(--bad)}
+.k.acc2{background:var(--accent)}
+.k.dimk{background:var(--wood-2);border:1px solid var(--fret)}
+.lbl{margin:14px 0 6px;font:700 11px var(--f-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);display:block}
+.chips + .srow{margin-top:2px}
+.srow{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:flex-end}
+.selwrap{flex:1 1 170px;min-width:0}
+#xscale{width:100%;font:700 16px var(--f-body);padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+.scard{margin-top:14px;padding:14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:grid;gap:10px}
+.shead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.shead h2{margin:4px 0 0;font:800 26px/1.05 var(--f-display);text-transform:uppercase;text-wrap:balance}
+.playbtn{flex:none;width:48px;height:48px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;cursor:pointer;box-shadow:0 3px 0 var(--accent-deep)}
+.playbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent-deep)}
+.spelled{display:flex;flex-wrap:wrap;gap:6px}
+.sn{display:grid;justify-items:center;min-width:40px;padding:6px 4px;border-radius:10px;background:var(--bg);border:1px solid var(--line)}
+.sn b{font:800 20px/1 var(--f-display)}
+.sn i{font:500 11px var(--f-mono);font-style:normal;color:var(--muted);margin-top:3px}
+.sn.r{background:var(--pearl);border-color:var(--wood)} .sn.r b,.sn.r i{color:var(--wood)}
+.sn.c{border-color:var(--accent);border-width:2px}
+.tapped{margin:0;font-size:14px;color:var(--muted)} .tapped b{color:var(--fg)}
+.chords{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.chd{display:grid;justify-items:center;gap:3px;padding:8px 0;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;box-shadow:0 2px 0 var(--line)}
+.chd b{font:800 16px/1 var(--f-display)}
+.chd span{font:500 10px var(--f-mono);color:var(--muted)}
+.chd.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)} .chd.on span{color:var(--on-accent)}
+.misses{display:grid;gap:8px;padding:14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0;font-size:13px;color:var(--muted)}
+.mlist{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:240px;overflow-y:auto}
+.mlist li{display:grid;grid-template-columns:44px 1fr;gap:0 10px;align-items:baseline;padding-block:6px;border-top:1px solid var(--line)}
+.mlist b{font:800 22px/1 var(--f-display);color:var(--bad);grid-row:span 2}
+.mlist em{font-style:normal;font-size:13px;color:var(--muted)}
+.k.ghost{border:1.5px dashed var(--fg)}
+.k.root{background:var(--pearl);border:1.5px solid var(--wood)}
+.seg{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);margin-top:10px}
+.seg button{border:0;background:transparent;border-radius:999px;padding:8px 14px;font:700 14px var(--f-body);cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--accent);color:var(--on-accent)}
+.tips{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.tips li{display:grid;grid-template-columns:34px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.tnum{width:30px;height:30px;border-radius:50%;background:var(--wood);color:var(--pearl);display:grid;place-items:center;font:700 13px var(--f-mono)}
+.tips h3{margin:0 0 4px;font:700 20px/1.1 var(--f-display);text-transform:uppercase}
+.tips p{margin:0;color:var(--fg)}
+.tips div{min-width:0}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:8px;z-index:10}
+.nav button{flex:1;max-width:220px;border:0;background:transparent;border-radius:10px;padding:10px;font:700 15px var(--f-body);color:var(--muted);cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
+.nav{gap:4px}
+.nav button{flex-direction:column;gap:3px;padding:7px 2px;font-size:12px;min-width:0}
+.fpcard{width:100%;margin-top:12px;padding:16px;border-radius:16px;border:0;background:var(--wood);color:var(--pearl);display:grid;gap:4px;text-align:left;cursor:pointer;box-shadow:0 3px 0 var(--accent-deep)}
+.fpcard:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent-deep)}
+.fph{font:800 28px/1 var(--f-display);text-transform:uppercase}
+.fpd{color:var(--fret)}
+.nav button.on{background:var(--accent-soft);color:var(--accent)}
+
+/* review remix */
+.clockrow{display:flex;gap:8px;align-items:center;min-width:0}
+.clockrow .bar{flex:1}
+.hearts{display:flex;gap:4px;align-items:center;font:700 20px/1 var(--f-body);color:var(--bad);min-width:0}
+.hearts i{font-style:normal}
+.hearts i.gone{color:var(--line)}
+.hearts span{margin-left:auto;font:500 12px var(--f-mono);color:var(--muted)}
+.fmtcard{display:grid;gap:4px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);margin-top:12px}
+.fmtcard b{font:800 22px/1 var(--f-display);text-transform:uppercase}
+.fmtcard span{font-size:14px}
+.fmts{margin-top:10px}
+.fmts summary{cursor:pointer;font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 0}
+.fmts .chips{margin-top:6px;display:flex;flex-wrap:wrap}
+.fmts .chip{padding:9px 12px;font-size:16px;white-space:nowrap}
+.focus{margin:0;font:500 13px var(--f-mono);color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="app" class="app"></div>
+<nav class="nav" id="nav"></nav>
+
+<script>
+/* ---------- music helpers ---------- */
+const OPEN=[40,45,50,55,59,64];               // low E .. high e (MIDI)
+const SNAME=['low E','A','D','G','B','high e'];
+const SLAB=['E','A','D','G','B','e'];
+const SH=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const FL=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+const NAT=[0,2,4,5,7,9,11];
+const pc=(s,f)=>(OPEN[s]+f)%12;
+const isNat=p=>NAT.includes(p);
+const nm=p=>isNat(p)?SH[p]:SH[p]+' / '+FL[p];
+const fretTxt=f=>f?'fret '+f:'open';
+const cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const P=(s,frets)=>frets.map(f=>({s,f}));
+const NATP=(...ss)=>{const r=[];ss.forEach(s=>{for(let f=0;f<=12;f++)if(isNat(pc(s,f)))r.push({s,f});});return r;};
+const ALLP=()=>{const r=[];for(let s=0;s<6;s++)for(let f=0;f<=12;f++)r.push({s,f});return r;};
+const lab=arr=>arr.map(({s,f})=>({s,f,label:SH[pc(s,f)],cls:'map'+(isNat(pc(s,f))?'':' acc')}));
+
+/* ---------- question generators ---------- */
+function genAlpha(){
+  const L=[['A',9],['B',11],['C',0],['D',2],['E',4],['F',5],['G',7]];
+  const i=Math.floor(Math.random()*7),[x,p]=L[i],[y]=L[(i+1)%7];
+  const half=x==='B'||x==='E', k=Math.floor(Math.random()*3);
+  if(k===0) return {lv:'alpha',type:'choice',key:'gap'+x,prompt:`How many frets from ${x} up to ${y}?`,choices:['1 fret','2 frets'],ans:half?'1 fret':'2 frets',
+    explain:half?`${x} to ${y} is one of the two half steps. Nothing in between, so it's one fret.`:`${x}♯ sits between them, so it's two frets.`};
+  if(k===1) return {lv:'alpha',type:'choice',key:'sh'+x,prompt:`Is there a sharp between ${x} and ${y}?`,choices:['Yes','No'],ans:half?'No':'Yes',
+    explain:half?`No. B–C and E–F are the only pairs with no sharp between them.`:`Yes, ${x}♯. Only B–C and E–F skip the sharp.`};
+  const a=(p+1)%12, label=q=>isNat(q)?SH[q]:SH[q];
+  const opts=shuffle([a,(p+11)%12,(p+2)%12,(p+3)%12]).map(label);
+  return {lv:'alpha',type:'choice',key:'up'+x,prompt:`What note is one fret above ${x}?`,choices:opts,ans:label(a),
+    explain:half?`${x} to ${SH[a]} is a half step with no sharp between, so one fret up is ${SH[a]}.`:`One fret above ${x} is ${SH[a]}. Two frets up would be ${y}.`};
+}
+function genPos(lv,pos,{acc=false,mode='mix',nameHint,findHint,reveal}={}){
+  const {s,f}=rnd(pos), p=pc(s,f);
+  const t=mode==='mix'?(Math.random()<.55?'name':'find'):mode;
+  if(t==='name') return {lv,type:'name',key:`n${s}.${f}`,prompt:'Name this note',sub:`${cap(SNAME[s])} string, ${fretTxt(f)}`,
+    show:[{s,f,label:'?'}],pos:{s,f},grid:acc?'all':'nat',ans:p,midi:OPEN[s]+f,
+    reveal:reveal?reveal(s,f):[],explain:nameHint?nameHint(s,f,p):`${cap(SNAME[s])} string, ${fretTxt(f)} = ${nm(p)}.`};
+  const answers=[];for(let g=0;g<=12;g++)if(pc(s,g)===p)answers.push({s,f:g});
+  const label=isNat(p)?SH[p]:(Math.random()<.5?SH[p]:FL[p]);
+  return {lv,type:'find',key:`f${s}.${p}`,prompt:`Find ${label} on the ${SNAME[s]} string`,sub:'Tap the fret on the highlighted string',
+    tstr:s,ans:answers,midi:OPEN[s]+f,
+    explain:(findHint?findHint(s,answers,label)+' ':'')+`${label} on the ${SNAME[s]} string: ${answers.map(a=>fretTxt(a.f)).join(' or ')}.`};
+}
+function genOct(lv,from,up){
+  const s=rnd(from), f=Math.floor(Math.random()*(13-up)), p=pc(s,f);
+  return {lv,type:'find',key:`o${s}.${f}`,prompt:`Tap the octave of this ${SH[p]}`,sub:`Root on the ${SNAME[s]} string, ${fretTxt(f)}`,
+    show:[{s,f,label:SH[p],cls:'root'}],tstr:s+2,ans:[{s:s+2,f:f+up}],root:OPEN[s]+f,midi:OPEN[s]+f+12,
+    explain:`Two strings over, ${up===2?'two':'three'} frets up: ${SNAME[s+2]} string, fret ${f+up}.`};
+}
+function genFive(){
+  const s=Math.floor(Math.random()*5), f=s===3?4:5, p=pc(s,f);
+  const why=s===3?'The G string is the exception: fret 4 matches open B.':`Fret 5 on the ${SNAME[s]} string = open ${SNAME[s+1]}.`;
+  if(Math.random()<.5) return {lv:'five',type:'choice',key:'c'+s,prompt:'Which open string sounds the same as this note?',sub:`${cap(SNAME[s])} string, fret ${f}`,
+    show:[{s,f,label:'?'}],choices:['A','D','G','B','high e'],ans:SNAME[s+1],midi:OPEN[s]+f,
+    reveal:[{s,f,label:SH[p],cls:'good'},{s:s+1,f:0,label:SH[p],cls:'ghost'}],explain:why};
+  return {lv:'five',type:'find',key:'f'+s,prompt:`Which fret on the ${SNAME[s]} string matches open ${SNAME[s+1]}?`,sub:'Tap it on the highlighted string',
+    show:[{s:s+1,f:0,label:SH[p],cls:'ghost'}],tstr:s,ans:[{s,f}],midi:OPEN[s]+f,explain:why};
+}
+function genTwelve(){
+  const s=rnd([0,1,5]), base=rnd(s===1?[0,2,3,5,7]:[0,1,3,5,7]), F=base+12, p=pc(s,base);
+  if(Math.random()<.5){
+    const set=new Set([base]);[base+1,base+2,base-1,base+3,base-2].forEach(v=>{if(set.size<4&&v>=0)set.add(v)});
+    const lbl=v=>v?'Fret '+v:'Open';
+    return {lv:'twelve',type:'choice',key:'c'+s+F,prompt:`Fret ${F} on the ${SNAME[s]} string is the same note as…`,sub:'Same string, lower on the neck',
+      choices:shuffle([...set]).map(lbl),ans:lbl(base),midi:OPEN[s]+F,explain:`${F} − 12 = ${base}. Both are ${SH[p]}.`};
+  }
+  return {lv:'twelve',type:'name',key:'n'+s+F,prompt:`What note is fret ${F} on the ${SNAME[s]} string?`,sub:'Subtract 12, then use what you know',
+    grid:'nat',ans:p,midi:OPEN[s]+F,explain:`${F} − 12 = ${base}. ${cap(SNAME[s])} string, ${fretTxt(base)} = ${SH[p]}.`};
+}
+
+/* ---------- remix question types (daily review only) ---------- */
+function genTwin(){
+  // a note is shown on one string; find the same note on another string
+  let a,b;do{a=Math.floor(Math.random()*6);b=Math.floor(Math.random()*6);}while(a===b||a+b===5&&(a===0||b===0));
+  const {f}=rnd(NATP(a)),p=pc(a,f);
+  const ans=[];for(let g=0;g<=12;g++)if(pc(b,g)===p)ans.push({s:b,f:g});
+  if(!ans.length)return genTwin();
+  const up=a<=1?2:a<=3?3:null;
+  const oct=b===a+2&&up&&f+up<=12?` Octave shape: two strings over, ${up===2?'two':'three'} frets up.`:'';
+  const nb=Math.abs(a-b)===1?` Neighbor string: the same note sits ${(a===3&&b===4)||(a===4&&b===3)?'4':'5'} frets ${b>a?'lower on the thinner':'higher on the thicker'} string.`:'';
+  return {lv:'twin',type:'find',key:`t${a}.${f}>${b}`,prompt:`Find this ${SH[p]} on the ${SNAME[b]} string`,sub:`It's showing on the ${SNAME[a]} string, ${fretTxt(f)}`,
+    show:[{s:a,f,label:SH[p],cls:'root'}],tstr:b,ans,root:OPEN[a]+f,midi:OPEN[b]+ans[0].f,
+    explain:`${SH[p]} on the ${SNAME[b]} string: ${ans.map(x=>fretTxt(x.f)).join(' or ')}.${oct||nb}`};
+}
+function genWhich(){
+  // at fret N, which string has this note?
+  const pool=Math.random()<.7?NATP(0,1,2,3,4):(()=>{const r=[];for(let s=0;s<5;s++)for(let f=0;f<=12;f++)r.push({s,f});return r;})();
+  const {s,f}=rnd(pool),p=pc(s,f),ch=['E','A','D','G','B'];
+  return {lv:'which',type:'choice',key:`w${s}.${f}`,prompt:`At ${f?'fret '+f:'the open strings'}, which string gives you ${nm(p)}?`,sub:'Every ? is the same fret',
+    show:[0,1,2,3,4,5].map(x=>({s:x,f,label:'?'})),choices:ch,ans:ch[s],midi:OPEN[s]+f,
+    reveal:[0,1,2,3,4,5].map(x=>({s:x,f,label:SH[pc(x,f)],cls:pc(x,f)===p?'good':'map'})),
+    explain:`${s===0?'Low E and high e both':cap(SNAME[s])+' string'}, ${fretTxt(f)} = ${nm(p)}.`};
+}
+function genStep(){
+  // from a known note, walk the alphabet to a neighbor on the same string
+  for(let t=0;t<50;t++){
+    const s=Math.floor(Math.random()*6),m=rnd(NATP(s)),p=pc(s,m.f),di=rnd([-2,-1,1,2]);
+    let cur=p,tf=m.f;const steps=[];
+    for(let k=0;k<Math.abs(di);k++){
+      const nx=NAT[(NAT.indexOf(cur)+(di>0?1:6))%7],sz=di>0?(nx-cur+12)%12:(cur-nx+12)%12;
+      steps.push(`${SH[cur]} to ${SH[nx]} is ${sz===1?'1 fret':'2 frets'}`);tf+=di>0?sz:-sz;cur=nx;
+    }
+    if(tf<0||tf>12)continue;
+    const ans=[];for(let g=0;g<=12;g++)if(pc(s,g)===cur)ans.push({s,f:g});
+    return {lv:'step',type:'find',key:`s${s}.${m.f}>${cur}`,prompt:`That's ${SH[p]}. Walk ${di>0?'up':'down'} to ${SH[cur]}.`,sub:`Same string (${SNAME[s]}), ${Math.abs(di)===1?'one letter':'two letters'} ${di>0?'up':'down'} the alphabet`,
+      show:[{...m,label:SH[p],cls:'root'}],tstr:s,ans,root:OPEN[s]+m.f,midi:OPEN[s]+tf,
+      explain:`${steps.join(', ')}. So ${SH[cur]} is ${fretTxt(tf)}.`};
+  }
+  return genWhich();
+}
+const XT={
+  twin:{title:'Twin notes',tip:'Every note lives in more than one place. Skip a string and use the octave shape (two up from E or A, three up from D or G). Or hop to the next thinner string: the same note sits 5 frets lower, 4 when you cross from G to B.'},
+  which:{title:'Fret detective',tip:'Start from the string you know best at that fret, usually low E, then step across. Each thinner string is tuned five frets higher than the one before, except G to B, which is four. Low E and high e always match.'},
+  step:{title:'Walk the alphabet',tip:'From a note you know, walk the letters. Most steps are two frets. B to C and E to F are only one.'},
+};
+
+/* ---------- levels ---------- */
+const LEVELS=[
+  {id:'alpha',title:'The musical alphabet',gen:genAlpha,
+   tip:'Notes run A B C D E F G, then start over at A. Most neighbors are two frets apart with a sharp in between. Two pairs break the rule: B–C and E–F sit one fret apart, with no sharp between them.'},
+  {id:'lowE',title:'Low E landmarks',gen:()=>genPos('lowE',P(0,[0,3,5,7,8,10,12])),demo:()=>lab(P(0,[0,3,5,7,8,10,12])),
+   tip:'Use the dots on your neck as anchors. Low E string: open = E, 3 = G, 5 = A, 7 = B, 8 = C, 10 = D, 12 = E. Anything else is one fret away from one of these.'},
+  {id:'aStr',title:'A string landmarks',gen:()=>genPos('aStr',P(1,[0,2,3,5,7,8,10,12])),demo:()=>lab(P(1,[0,2,3,5,7,8,10,12])),
+   tip:'A string: open = A, 2 = B, 3 = C, 5 = D, 7 = E, 8 = F, 10 = G, 12 = A. These are the roots for every A-shape barre chord.'},
+  {id:'roots',title:'Root strings, every natural',gen:()=>genPos('roots',NATP(0,1)),demo:()=>lab(NATP(0,1)),
+   tip:'Mix both root strings. Count from the nearest dot, and remember B–C and E–F are only one fret apart.'},
+  {id:'highE',title:'High e = low E',demo:()=>lab(NATP(0,5)),
+   gen:()=>genPos('highE',NATP(5),{reveal:(s,f)=>[{s:0,f,label:SH[pc(0,f)],cls:'ghost'}],nameHint:(s,f,p)=>`${SH[p]}. Same as low E, ${fretTxt(f)}.`,findHint:()=>'Same frets as the low E string.'}),
+   tip:'The thinnest string is also E, two octaves up. Whatever you know at a fret on the low E string is the same note at that fret on high e.'},
+  {id:'octEA',title:'Octaves: two over, two up',gen:()=>genOct('octEA',[0,1],2),
+   demo:()=>[{s:0,f:3,label:'G',cls:'root'},{s:2,f:5,label:'G',cls:'map'},{s:1,f:3,label:'C',cls:'root'},{s:3,f:5,label:'C',cls:'map'}],
+   tip:'From any note on the low E or A string, skip a string and move up two frets. You land on the same note, one octave higher.'},
+  {id:'octDG',title:'Octaves: the B-string bump',gen:()=>genOct('octDG',[2,3],3),
+   demo:()=>[{s:2,f:2,label:'E',cls:'root'},{s:4,f:5,label:'E',cls:'map'},{s:3,f:2,label:'A',cls:'root'},{s:5,f:5,label:'A',cls:'map'}],
+   tip:'From the D or G string, the octave is two strings over and three frets up. The B string is tuned one fret lower than the pattern, so the shape stretches by one.'},
+  {id:'five',title:'The 5th-fret rule',gen:genFive,
+   demo:()=>[{s:0,f:5,label:'A',cls:'map'},{s:1,f:5,label:'D',cls:'map'},{s:2,f:5,label:'G',cls:'map'},{s:3,f:4,label:'B',cls:'root'},{s:4,f:5,label:'E',cls:'map'}],
+   tip:'Fret 5 on any string matches the next thinner string played open. It is how you tune by ear. The G string is the exception: use fret 4 to match open B.'},
+  {id:'twelve',title:'12 is the new open',gen:genTwelve,
+   tip:'At fret 12 the neck starts over. Subtract 12 from anything above it: fret 15 is fret 3, fret 17 is fret 5, fret 19 is fret 7.'},
+  {id:'DG',title:'D and G strings',gen:()=>genPos('DG',NATP(2,3)),demo:()=>lab(NATP(2,3)),
+   tip:'D string: 2 = E, 3 = F, 5 = G, 7 = A, 9 = B, 10 = C. G string: 2 = A, 4 = B, 5 = C, 7 = D, 9 = E, 10 = F. Stuck? Find it on the E or A string and use the octave shape.'},
+  {id:'B',title:'The B string',gen:()=>genPos('B',NATP(4)),demo:()=>lab(NATP(4)),
+   tip:'B string: 1 = C, 3 = D, 5 = E, 6 = F, 8 = G, 10 = A, 12 = B. It is the only string tuned a major third above its neighbor, which is why patterns shift here.'},
+  {id:'sharps',title:'Sharps and flats, whole neck',gen:()=>genPos('sharps',ALLP(),{acc:true}),demo:()=>lab(ALLP()),
+   tip:'Every fret between two natural notes has two names. One fret up from G is G♯; one fret down from A is A♭. Same fret, same sound. Find the nearest natural, then step.'},
+];
+const LIDX=Object.fromEntries(LEVELS.map((l,i)=>[l.id,i]));
+const lvInfo=id=>LEVELS[LIDX[id]]||XT[id]||LEVELS[0];
+
+/* ---------- daily review formats: one per day, in rotation ---------- */
+const FORMATS={
+  mix:{name:'Classic mix',blurb:'Ten questions from every level you’ve passed, your missed ones, and a few curveballs.'},
+  clock:{name:'Beat the clock',blurb:'Ten questions, 75 seconds. The clock pauses while you read feedback. Every second left over is bonus XP.'},
+  lives:{name:'Three strikes',blurb:'No set length. Keep answering until you miss three. Reach 10 to pass.'},
+  weak:{name:'Weak spots',blurb:'Built from the levels you’ve been missing most lately, plus extra room for missed questions.'},
+  twins:{name:'Twin notes',blurb:'A note is on the board. Find the same note on a different string. Connects the strings to each other.'},
+  detect:{name:'Fret detective',blurb:'Which string has that note at fret 7? Walk from G up to B. Puzzles you solve with the rules, not memory.'},
+};
+const FKEYS=Object.keys(FORMATS);
+const todayFmt=()=>FKEYS[((dayNo()%FKEYS.length)+FKEYS.length)%FKEYS.length];
+const CLOCK_MS=75000;
+
+/* ---------- state ---------- */
+const KEY='fretcaddy.v1';
+function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return null;}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const S=Object.assign({xp:0,streak:0,last:null,days:[],prog:{},missed:[],sound:true,dly:{last:null,streak:0,best:0,res:{}},dlySp:{last:null,streak:0,best:0,res:{}}},load()||{});
+const ds=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today=()=>ds(new Date());
+const yday=()=>{const d=new Date();d.setDate(d.getDate()-1);return ds(d);};
+const liveStreak=()=>(S.last===today()||S.last===yday())?S.streak:0;
+const passes=i=>S.prog[LEVELS[i].id]?.passes||0;
+const unlocked=i=>i===0||passes(i-1)>0;
+let view='home', L=null, tipOpen=false;
+const EX={mode:'nat',focus:null,sel:null,revealed:new Set(),view:'notes',root:9,scale:'minPent',lbl:'names',chord:null};
+
+/* ---------- sound (plucked string) ---------- */
+let AC=null;
+function pluck(midi,when=0){
+  if(!S.sound||midi==null)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended')AC.resume();
+    const sr=AC.sampleRate,f=440*Math.pow(2,(midi-69)/12),N=Math.max(2,Math.round(sr/f)),len=Math.floor(sr*1.5);
+    const b=AC.createBuffer(1,len,sr),d=b.getChannelData(0),r=new Float32Array(N);
+    for(let i=0;i<N;i++)r[i]=Math.random()*2-1;
+    let k=0;const dec=f<160?.998:.996;
+    for(let i=0;i<len;i++){const n=(k+1)%N;const v=dec*.5*(r[k]+r[n]);d[i]=r[k];r[k]=v;k=n;}
+    const src=AC.createBufferSource();src.buffer=b;const g=AC.createGain();g.gain.value=.32;
+    src.connect(g).connect(AC.destination);src.start(AC.currentTime+when);
+  }catch(e){}
+}
+
+/* ---------- icons ---------- */
+const I={
+  flame:'<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M12 2c1.2 4 5.5 5.6 5.5 10.6A5.5 5.5 0 0 1 6.5 12.6c0-2.2 1-3.8 2.2-4.8 0 2 .9 3.2 2.1 3.2 0-3.4-1-5.6 1.2-9z"/></svg>',
+  sound:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+  mute:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  x:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  bulb:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2zM9 19h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 20.5z"/></svg>',
+  check:'<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  path:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 3v18M16 3v18M8 8h8M8 14h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  play:'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13l10.5-6.5z"/></svg>',
+  eye:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>',
+  book:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><path d="M5 17a3 3 0 0 1 3-3h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>',
+};
+const soundBtn=()=>`<button class="iconbtn" data-act="sound" aria-pressed="${S.sound}" aria-label="Sound ${S.sound?'on':'off'}">${S.sound?I.sound:I.mute}</button>`;
+
+/* ---------- fretboard ---------- */
+const neck=o=>neckH(o); // every fretboard in the app is horizontal now
+function neckV({show=[],tap=null,hl=null,tapAll=false,act='tap'}={}){
+  const top=44,rh=27,W=286,H=top+12*rh+10,X=s=>58+s*38,Y=f=>f===0?29:top+(f-.5)*rh;
+  let g=`<rect class="wood" x="39" y="${top-3}" width="228" height="${H-top-1}" rx="3"/>`;
+  if(hl!==null) g+=`<rect class="hl" x="${X(hl)-19}" y="15" width="38" height="${H-17}" rx="6"/>`;
+  for(let f=1;f<=12;f++) g+=`<line class="fretw${f===12?' f12':''}" x1="39" x2="267" y1="${top+f*rh}" y2="${top+f*rh}"/>`;
+  [3,5,7,9].forEach(f=>g+=`<circle class="inl" cx="${(X(2)+X(3))/2}" cy="${Y(f)}" r="5"/>`);
+  g+=`<circle class="inl" cx="${(X(1)+X(2))/2}" cy="${Y(12)}" r="5"/><circle class="inl" cx="${(X(3)+X(4))/2}" cy="${Y(12)}" r="5"/>`;
+  g+=`<rect class="nut" x="39" y="${top-4}" width="228" height="5"/>`;
+  [2.6,2.2,1.8,1.4,1.1,.85].forEach((w,s)=>g+=`<line class="str${hl!==null&&s!==hl?' dim':''}" x1="${X(s)}" x2="${X(s)}" y1="16" y2="${H-1}" stroke-width="${w}"/>`);
+  SLAB.forEach((t,s)=>g+=`<text class="slab${s===hl?' hot':''}" x="${X(s)}" y="11">${t}</text>`);
+  for(let f=1;f<=12;f++) g+=`<text class="fnum${[3,5,7,9,12].includes(f)?' mk':''}" x="18" y="${Y(f)+4}">${f}</text>`;
+  show.forEach(d=>{const sm=(d.label||'').length>1;g+=`<g class="dot ${d.cls||''}"><circle cx="${X(d.s)}" cy="${Y(d.f)}" r="11.5"/><text x="${X(d.s)}" y="${Y(d.f)+4}"${sm?' style="font-size:9.5px"':''}>${d.label||''}</text></g>`;});
+  const hs=tapAll?[0,1,2,3,4,5]:tap!==null?[tap]:[];
+  hs.forEach(s=>{for(let f=0;f<=12;f++){const y=f===0?15:top+(f-1)*rh,h=f===0?top-16:rh;
+    g+=`<rect class="hit" tabindex="0" role="button" aria-label="${SNAME[s]} string ${fretTxt(f)}" data-act="${act}" data-s="${s}" data-f="${f}" x="${X(s)-19}" y="${y}" width="38" height="${h}"/>`;}});
+  return `<svg class="neck" viewBox="0 0 ${W} ${H}" role="img" aria-label="Fretboard, open to fret 12">${g}</svg>`;
+}
+
+/* horizontal neck, player's view: nut on the left, low E on top by default */
+function neckH({show=[],tapAll=false,act='tap',tap=null,hl=null}={}){
+  const lowTop=S.lowTop===true, W=384, H=222;
+  const Y=s=>24+(lowTop?s:5-s)*32, X=f=>f===0?36:55+(f-.5)*27;
+  let g=`<rect class="wood" x="52" y="8" width="${W-54}" height="192" rx="3"/>`;
+  if(hl!==null) g+=`<rect class="hl" x="20" y="${Y(hl)-15}" width="${W-22}" height="30" rx="6"/>`;
+  for(let f=1;f<=12;f++) g+=`<line class="fretw${f===12?' f12':''}" y1="8" y2="200" x1="${55+f*27}" x2="${55+f*27}"/>`;
+  [3,5,7,9].forEach(f=>g+=`<circle class="inl" cx="${X(f)}" cy="104" r="5"/>`);
+  g+=`<circle class="inl" cx="${X(12)}" cy="72" r="5"/><circle class="inl" cx="${X(12)}" cy="136" r="5"/>`;
+  g+=`<rect class="nut" x="50" y="8" width="5" height="192"/>`;
+  [2.6,2.2,1.8,1.4,1.1,.85].forEach((w,s)=>g+=`<line class="str${hl!==null&&s!==hl?' dim':''}" y1="${Y(s)}" y2="${Y(s)}" x1="22" x2="${W-2}" stroke-width="${w}"/>`);
+  SLAB.forEach((t,s)=>g+=`<text class="slab${s===hl?' hot':''}" x="10" y="${Y(s)+4}">${t}</text>`);
+  for(let f=1;f<=12;f++) g+=`<text class="fnum${[3,5,7,9,12].includes(f)?' mk':''}" x="${X(f)}" y="216">${f}</text>`;
+  g+=`<text class="fnum" x="36" y="216">0</text>`;
+  show.forEach(d=>{const sm=(d.label||'').length>1;g+=`<g class="dot ${d.cls||''}"><circle cx="${X(d.f)}" cy="${Y(d.s)}" r="11.5"/><text x="${X(d.f)}" y="${Y(d.s)+4}"${sm?' style="font-size:9.5px"':''}>${d.label||''}</text></g>`;});
+  const hs=tapAll?[0,1,2,3,4,5]:tap!==null?[tap]:[];
+  for(const s of hs)for(let f=0;f<=12;f++){const x=f===0?22:55+(f-1)*27,w=f===0?30:27;
+    g+=`<rect class="hit" tabindex="0" role="button" aria-label="${SNAME[s]} string ${fretTxt(f)}" data-act="${act}" data-s="${s}" data-f="${f}" x="${x}" y="${Y(s)-16}" width="${w}" height="32"/>`;}
+  return `<svg class="neck h" viewBox="0 0 ${W} ${H}" role="img" aria-label="Fretboard, nut on the left, ${lowTop?'low E':'high e'} string on top">${g}</svg>`;
+}
+const flipSeg=()=>`<div class="seg" role="group" aria-label="String order"><button class="${S.lowTop!==true?'on':''}" data-act="flip" data-v="0">High e on top</button><button class="${S.lowTop===true?'on':''}" data-act="flip" data-v="1">Low E on top</button></div>`;
+
+/* ---------- lessons ---------- */
+function makeQs(gens,n,seed=[]){
+  const out=seed.slice(), keys=new Set(out.map(q=>q.lv+q.key));let tries=0;
+  while(out.length<n&&tries<400){tries++;const q=rnd(gens)();const k=q.lv+q.key;if(keys.has(k)&&tries<300)continue;keys.add(k);out.push(q);}
+  return out;
+}
+function startLevel(i){
+  L={mode:'level',li:i,queue:makeQs([LEVELS[i].gen],10).map(q=>({q,retry:false})),total:10,done:0,correct:0,state:'intro',last:null};
+  tipOpen=false;view='lesson';render(true);
+}
+const lvRate=id=>{const r=(S.lvStats||{})[id];return r?(r.ok+1)/(r.n+2):.5;};
+function weakest(pool,k){
+  return shuffle(pool).sort((a,b)=>lvRate(LEVELS[a].id)-lvRate(LEVELS[b].id)).slice(0,k);
+}
+function startReview(fmt){
+  fmt=FORMATS[fmt]?fmt:todayFmt();
+  let pool=LEVELS.map((l,i)=>i).filter(i=>passes(i)>0);
+  if(!pool.length)pool=[0];
+  let gens=pool.map(i=>LEVELS[i].gen),seedN=4,n=10,focus=null;
+  if(fmt==='mix'&&pool.length>=4)gens=gens.concat([genTwin,genWhich,genStep]);
+  if(fmt==='weak'){focus=weakest(pool,Math.min(3,pool.length));gens=focus.map(i=>LEVELS[i].gen);seedN=6;}
+  if(fmt==='twins'){gens=[genTwin,genTwin,genTwin];['octEA','octDG'].forEach(id=>{if(passes(LIDX[id])>0)gens.push(LEVELS[LIDX[id]].gen);});seedN=2;}
+  if(fmt==='detect'){gens=[genWhich,genStep,genStep];seedN=2;}
+  if(fmt==='lives'){seedN=3;n=12;}
+  const seed=shuffle(S.missed).slice(0,seedN).map(q=>({...q,fromMissed:true}));
+  const qs=shuffle(makeQs(gens,n,seed));
+  L={mode:'review',fmt,gens,focus,queue:qs.map(q=>({q,retry:false})),total:fmt==='lives'?0:qs.length,done:0,correct:0,state:'intro',last:null,lives:3,clock:CLOCK_MS};
+  tipOpen=false;view='lesson';render(true);
+}
+function beginReview(){
+  L.state='ask';
+  if(L.fmt==='clock'){L.clockStart=Date.now();clearInterval(timerId);timerId=setInterval(rtick,100);}
+  render(true);
+}
+const clockLeft=()=>Math.max(0,L.state==='ask'?L.clock-(Date.now()-L.clockStart):L.clock);
+function rtick(){
+  if(view!=='lesson'||!L||L.fmt!=='clock'||L.mode!=='review'){clearInterval(timerId);return;}
+  const left=clockLeft(),b=document.getElementById('tbar'),t=document.getElementById('tsec');
+  if(b){b.style.width=left/CLOCK_MS*100+'%';b.classList.toggle('low',left<15000);}
+  if(t)t.textContent=Math.ceil(left/1000)+'s';
+  if(left<=0&&L.state==='ask'){clearInterval(timerId);L.clock=0;L.timeout=true;finish();}
+}
+function check(q,v){
+  if(q.type==='find')return q.ans.some(a=>a.s===v.s&&a.f===v.f);
+  if(q.type==='choice')return q.choices[v]===q.ans;
+  return v===q.ans;
+}
+function answer(v){
+  if(L.state!=='ask')return;
+  const it=L.queue[0],q=it.q,ok=check(q,v);
+  if(L.fmt==='clock'){L.clock=clockLeft();}
+  L.last={ok,v};L.state='feedback';
+  if(!it.retry){
+    L.done++;if(ok)L.correct++;
+    // recent-weighted accuracy per level, used by Weak spots
+    const st=S.lvStats=S.lvStats||{},r=st[q.lv]||(st[q.lv]={n:0,ok:0});
+    r.n=r.n*.95+1;r.ok=r.ok*.95+(ok?1:0);
+    if(!ok&&L.fmt==='lives')L.lives--;
+  }
+  if(ok&&!it.retry)S.missed=S.missed.filter(m=>!(m.lv===q.lv&&m.key===q.key));
+  if(!ok){
+    if(L.fmt!=='clock'&&L.fmt!=='lives')L.queue.push({q,retry:true});
+    if(!it.retry){const{fromMissed,...clean}=q;S.missed=[clean,...S.missed.filter(m=>!(m.lv===q.lv&&m.key===q.key))].slice(0,30);}
+  }
+  save();
+  if(q.type==='find'){
+    if(q.root!=null){pluck(q.root);pluck(OPEN[v.s]+v.f,.35);if(!ok)pluck(q.midi,.9);}
+    else{pluck(OPEN[v.s]+v.f);if(!ok)pluck(q.ans[0].s!=null?OPEN[q.ans[0].s]+q.ans[0].f:q.midi,.6);}
+  } else pluck(q.midi);
+  render();
+  const b=document.querySelector('.sheet .btn');if(b)b.focus({preventScroll:true});
+}
+function next(){
+  L.queue.shift();
+  if(L.fmt==='lives'){
+    if(L.lives<=0)return finish();
+    if(L.queue.length<3)makeQs(L.gens,6).forEach(q=>L.queue.push({q,retry:false}));
+  }
+  if(!L.queue.length)return finish();
+  L.state='ask';L.last=null;tipOpen=false;
+  if(L.fmt==='clock')L.clockStart=Date.now();
+  render(true);
+}
+function finish(){
+  clearInterval(timerId);
+  if(L.fmt==='lives')L.total=Math.max(1,L.done);
+  const passed=L.fmt==='lives'?L.correct>=10:L.correct/L.total>=.7;
+  const bonus=L.fmt==='clock'&&!L.timeout?Math.ceil(L.clock/1000):0;
+  const xp=L.correct*10+(passed?20:5)+bonus;
+  S.xp+=xp;
+  markDay();
+  let unlockedNew=null,newBest=false;
+  if(L.mode==='review'){
+    S.rev={last:today(),fmt:L.fmt};
+    if(L.fmt==='lives'){newBest=L.correct>(S.bestLives||0);S.bestLives=Math.max(S.bestLives||0,L.correct);}
+  }
+  if(L.mode==='level'&&passed){
+    const id=LEVELS[L.li].id,pr=S.prog[id]||{passes:0,best:0};
+    if(pr.passes===0&&LEVELS[L.li+1])unlockedNew=LEVELS[L.li+1].title;
+    pr.passes++;pr.best=Math.max(pr.best,L.correct);S.prog[id]=pr;
+  }
+  L.result={passed,xp,unlockedNew,bonus,newBest};
+  save();view='result';render(true);
+}
+
+function markDay(){
+  const t=today();
+  if(S.last!==t){S.streak=S.last===yday()?S.streak+1:1;S.last=t;}
+  if(!S.days.includes(t))S.days=[...S.days,t].slice(-60);
+}
+
+/* ---------- arcade games ---------- */
+let G=null, timerId=null;
+const GAMES={hunt:'Note Hunt',speed:'Speed Name'};
+const arcPool=()=>S.arcAcc?ALLP():NATP(0,1,2,3,4,5);
+/* daily hunt: same seeded note sequence for the whole day */
+const hashStr=t=>{let h=2166136261;for(const c of t){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
+const seeded=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+const dayNo=()=>Math.round((new Date(today()+'T00:00')-new Date('2026-10-12T00:00'))/864e5)+1;
+const D=k=>k==='hunt'?S.dly:S.dlySp;
+const DNAME={hunt:'Daily Hunt',speed:'Daily Speed Name'};
+const dlyStreak=(k='hunt')=>(D(k).last===today()||D(k).last===yday())?D(k).streak:0;
+const stars=b=>b>=5?3:b>=3?2:b>=1?1:0;
+const starsOf=(k,r)=>k==='hunt'?stars(r.boards||0):((r.correct||0)>=30?3:(r.correct||0)>=20?2:(r.correct||0)>=10?1:0);
+const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
+const dailiesDone=()=>['hunt','speed'].filter(k=>D(k).last===today()).length;
+function startDaily(k){
+  startGame(k);
+  G.daily=true;G.official=D(k).last!==today();G.rng=G.official?seeded(hashStr('fretcaddy'+k+today())):null;
+  if(k==='hunt'){G.target=null;newTarget();}else{G.q=null;newDot();}
+  render(true);
+}
+function startGame(kind){
+  G={kind,end:Date.now()+60000,score:0,combo:0,maxCombo:0,cleared:0,correct:0,wrong:null,msg:null,prev:null,misses:[]};
+  kind==='hunt'?newTarget():newDot();
+  view='game';render(true);
+  clearInterval(timerId);timerId=setInterval(tick,100);
+}
+function newTarget(){
+  const pcs=S.arcAcc&&!G.daily?[0,1,2,3,4,5,6,7,8,9,10,11]:NAT, r=G.rng||Math.random;
+  let p;do{p=pcs[Math.floor(r()*pcs.length)];}while(p===G.target);
+  G.target=p;G.found=new Set();G.wrong=null;
+  G.total=ALLP().filter(({s,f})=>pc(s,f)===p).length;
+}
+function newDot(){
+  const pool=G.daily?NATP(0,1,2,3,4,5):arcPool(), r=G.rng||Math.random;
+  let d;do{d=pool[Math.floor(r()*pool.length)];}while(G.q&&d.s===G.q.s&&d.f===G.q.f);
+  G.q=d;
+}
+const mult=()=>Math.min(4,1+Math.floor(G.combo/5));
+function hit(){G.combo++;G.maxCombo=Math.max(G.maxCombo,G.combo);G.score+=10*mult();G.correct++;}
+function miss(){G.combo=0;G.end-=3000;}
+function huntTap(s,f){
+  const k=s+'.'+f;if(G.found.has(k))return;
+  pluck(OPEN[s]+f);
+  if(pc(s,f)===G.target){
+    hit();G.found.add(k);G.wrong=null;G.msg=null;
+    if(G.found.size===G.total){G.cleared++;G.score+=25;G.end+=5000;G.msg={ok:true,text:`Every ${SH[G.target]} found. +25 and +5 seconds.`};newTarget();}
+  } else {miss();G.wrong={s,f};G.misses.push({s,f,label:SH[pc(s,f)],kind:'bad',why:`Wrong tap while hunting ${SH[G.target]}`});G.msg={ok:false,text:`That's ${nm(pc(s,f))}. −3 seconds.`};}
+  render();
+}
+function speedAns(p){
+  const {s,f}=G.q,a=pc(s,f);pluck(OPEN[s]+f);
+  if(p===a){hit();G.msg={ok:true,text:`${nm(a)}. ${mult()>1?mult()+'× combo':'Nice'}.`};}
+  else{miss();G.misses.push({s,f,label:SH[a],kind:'bad',why:`You said ${SH[p]}`});G.msg={ok:false,text:`That was ${nm(a)} (${SNAME[s]}, ${fretTxt(f)}). −3 seconds.`};}
+  G.prev={s,f,ok:p===a,label:SH[a]};newDot();render();
+}
+function tick(){
+  if(view!=='game'||!G){clearInterval(timerId);return;}
+  const left=Math.max(0,G.end-Date.now());
+  const b=document.getElementById('tbar'),t=document.getElementById('tsec');
+  if(b){b.style.width=Math.min(100,left/600)+'%';b.classList.toggle('low',left<10000);}
+  if(t)t.textContent=Math.ceil(left/1000)+'s';
+  if(left<=0)endGame();
+}
+function endGame(){
+  clearInterval(timerId);
+  if(G.kind==='hunt') ALLP().forEach(({s,f})=>{if(pc(s,f)===G.target&&!G.found.has(s+'.'+f))G.misses.push({s,f,label:SH[G.target],kind:'ghost',why:`Not found before time ran out`});});
+  // send up to 6 missed spots to the daily review as name-the-note questions
+  const seen=new Set();
+  G.misses.filter(m=>{const k=m.s+'.'+m.f;if(seen.has(k))return false;seen.add(k);return true;}).slice(0,6).forEach(({s,f})=>{
+    const p=pc(s,f),lv=!isNat(p)?'sharps':s<2?'roots':s===5?'highE':s===4?'B':'DG',key=`n${s}.${f}`;
+    const q={lv,type:'name',key,prompt:'Name this note',sub:`${cap(SNAME[s])} string, ${fretTxt(f)}`,show:[{s,f,label:'?'}],pos:{s,f},
+      grid:isNat(p)?'nat':'all',ans:p,midi:OPEN[s]+f,reveal:[],explain:`${cap(SNAME[s])} string, ${fretTxt(f)} = ${nm(p)}.`};
+    S.missed=[q,...S.missed.filter(m=>!(m.lv===lv&&m.key===key))].slice(0,30);
+  });
+  if(G.daily&&G.official){
+    const d=D(G.kind);d.streak=d.last===yday()?d.streak+1:1;d.last=today();d.best=Math.max(d.best,d.streak);
+    d.res[today()]={score:G.score,boards:G.cleared,correct:G.correct};
+    const keys=Object.keys(d.res).sort();keys.slice(0,Math.max(0,keys.length-60)).forEach(k=>delete d.res[k]);
+  }
+  S.best=S.best||{};const old=S.best[G.kind]||0;
+  G.newBest=G.score>old&&G.score>0;S.best[G.kind]=Math.max(old,G.score);
+  G.xp=Math.round(G.score/10)+5;S.xp+=G.xp;markDay();save();
+  view='gameover';render(true);
+}
+function quitGame(){clearInterval(timerId);G=null;view='arcade';render(true);}
+
+function arcadeView(){
+  const b=S.best||{};
+  const card=(act,title,desc,meta)=>`<button class="gcard" data-act="${act}"><span class="gtitle">${title}</span><span class="gdesc">${desc}</span><span class="gmeta">${meta}</span></button>`;
+  const ds7=[...Array(7)].map((_,k)=>{const d=new Date();d.setDate(d.getDate()-(6-k));return d;});
+  const dailyCard=k=>{
+    const dd=D(k),done=dd.last===today(),res=dd.res[today()];
+    const week=ds7.map((d,i)=>{const r=dd.res[ds(d)];return `<div class="dday${r?' on':''}${i===6?' now':''}"><span class="dstars">${r?starStr(starsOf(k,r)):'·'}</span><span>${'SMTWTFS'[d.getDay()]}</span></div>`;}).join('');
+    const doneTxt=k==='hunt'?`You scored <b>${res?.score}</b> and cleared ${res?.boards} ${res?.boards===1?'board':'boards'}`:`You scored <b>${res?.score}</b> with ${res?.correct} correct`;
+    const rules=k==='hunt'?'Find every spot each note lives. Clear 1, 3 or 5 boards for one, two or three stars.':'Name the dots as fast as you can. Get 10, 20 or 30 right for one, two or three stars.';
+    return `<section class="daily">
+    <div class="drow"><div><p class="eyebrow" style="color:var(--accent)">${DNAME[k]} #${dayNo()}</p>
+    <h2 class="dh">${done?'Done for today':'Ready to play'}</h2></div>
+    <div class="dflame">${I.flame}<b>${dlyStreak(k)}</b><span>day streak</span></div></div>
+    <p class="dp">${done?`${doneTxt} ${starStr(starsOf(k,res||{}))}. Practice replays get fresh notes. New official run at midnight.`:`One official run per day. Replays after that are practice with fresh notes. ${rules}`}</p>
+    <div class="dweek">${week}</div>
+    <button class="btn ${done?'':'primary'}" data-act="daily" data-k="${k}">${done?'Replay for practice':'Play '+DNAME[k]}</button>
+    <p class="dmeta">Best daily streak: ${dd.best} ${dd.best===1?'day':'days'}</p></section>`;
+  };
+  return header()+`<h1 class="page-h">Arcade</h1><p class="sub" style="margin:0">${dailiesDone()}/2 daily challenges done today. Any game counts toward your main streak.</p>${dailyCard('hunt')}${dailyCard('speed')}
+    <h2 class="section">Free rounds</h2>
+    <div class="seg" role="group" aria-label="Notes in play"><button class="${!S.arcAcc?'on':''}" data-act="arcacc" data-v="0">Naturals</button><button class="${S.arcAcc?'on':''}" data-act="arcacc" data-v="1">With sharps & flats</button></div>
+    ${flipSeg()}
+    <div class="gcards">
+      ${card('game-hunt','Note Hunt','Find every spot a note lives on the neck. Clear the board for +5 seconds.',`Best ${b.hunt||0}`)}
+      ${card('game-speed','Speed Name','A dot pops up anywhere on the neck. Name it before the clock runs out.',`Best ${b.speed||0}`)}
+      ${card('explore','Free play','No clock. Tap around, hear notes, and light up every C on the neck.','Practice mode')}
+    </div>
+    <p class="note" style="color:var(--muted);margin-top:14px">Combos: every 5 in a row bumps your multiplier, up to 4×. Wrong taps cost 3 seconds.</p>`;
+}
+function gameView(){
+  const left=Math.max(0,G.end-Date.now());
+  const top=`<div class="lhead"><button class="iconbtn" data-act="quit" aria-label="Quit game">${I.x}</button>
+    <div class="bar timer"><i id="tbar" class="${left<10000?'low':''}" style="width:${Math.min(100,left/600)}%"></i></div>
+    <span class="stat" id="tsec">${Math.ceil(left/1000)}s</span>${soundBtn()}</div>
+    <div class="gscore"><span>Score <b>${G.score}</b></span><span class="${mult()>1?'hot':''}">${mult()}× combo · ${G.combo} streak</span></div>`;
+  const msg=G.msg?`<p class="gmsg ${G.msg.ok?'ok':'bad'}" aria-live="polite">${G.msg.text}</p>`:`<p class="gmsg" aria-live="polite">&nbsp;</p>`;
+  if(G.kind==='hunt'){
+    const show=[...G.found].map(k=>{const[s,f]=k.split('.').map(Number);return{s,f,label:SH[G.target],cls:'good'};});
+    if(G.wrong)show.push({...G.wrong,label:SH[pc(G.wrong.s,G.wrong.f)],cls:'bad'});
+    return top+`<p class="eyebrow">${G.daily?`${DNAME.hunt} #${dayNo()}${G.official?'':' · practice'}`:'Note Hunt'} · board ${G.cleared+1}</p>
+      <h1 class="prompt">Find every <span class="target">${SH[G.target]}${isNat(G.target)?'':' / '+FL[G.target]}</span></h1>
+      <p class="sub">${G.found.size} of ${G.total} found</p>${msg}
+      <div class="neckwrap">${neckH({show,tapAll:true,act:'gtap'})}</div>`;
+  }
+  const show=[{...G.q,label:'?'}];
+  if(G.prev)show.unshift({s:G.prev.s,f:G.prev.f,label:G.prev.label,cls:G.prev.ok?'ghost':'bad'});
+  const acc=S.arcAcc&&!G.daily,order=acc?[0,1,2,3,4,5,6,7,8,9,10,11]:[0,2,4,5,7,9,11];
+  return top+`<p class="eyebrow">${G.daily?`${DNAME.speed} #${dayNo()}${G.official?'':' · practice'}`:'Speed Name'} · ${G.correct} correct</p><h1 class="prompt">Name it</h1><p class="sub">${cap(SNAME[G.q.s])} string, ${fretTxt(G.q.f)}</p>${msg}
+    <div class="neckwrap">${neckH({show})}</div>
+    <div class="pad ${acc?'all':'nat'}">${order.map(p=>`<button class="key" data-act="gans" data-v="${p}">${SH[p]}${acc&&!isNat(p)?`<small>${FL[p]}</small>`:''}</button>`).join('')}</div>`;
+}
+function missReview(){
+  if(!G.misses.length)return `<div class="misses"><h2 class="section" style="margin:0">What you missed</h2><p class="xempty">Nothing. Clean round.</p></div>`;
+  const dots=new Map();G.misses.forEach(m=>dots.set(m.s+'.'+m.f,{s:m.s,f:m.f,label:m.label,cls:m.kind}));
+  const hasGhost=G.misses.some(m=>m.kind==='ghost'),hasBad=G.misses.some(m=>m.kind==='bad');
+  return `<div class="misses"><h2 class="section" style="margin:0">What you missed · ${G.misses.length}</h2>
+    <p class="legend">${hasBad?`<span><i class="k bad"></i>Wrong answer, real note shown</span>`:''}${hasGhost?`<span><i class="k ghost"></i>${SH[G.target]} spots you didn’t find</span>`:''}</p>
+    <div class="neckwrap">${neckH({show:[...dots.values()]})}</div>
+    <ol class="mlist">${G.misses.map(m=>`<li><b>${m.label}</b><span>${cap(SNAME[m.s])} string, ${fretTxt(m.f)}</span><em>${m.why}</em></li>`).join('')}</ol>
+    <p class="note" style="color:var(--muted)">These spots are added to your daily review.</p></div>`;
+}
+function gameoverView(){
+  const dl=G.daily;
+  const st=dlyStreak(G.kind),other=G.kind==='hunt'?'speed':'hunt';
+  return `<section class="result"><p class="eyebrow">${dl?`${DNAME[G.kind]} #${dayNo()}${G.official?'':' · practice'}`:GAMES[G.kind]} · time’s up</p><h1>${dl?starStr(starsOf(G.kind,{boards:G.cleared,correct:G.correct})):G.newBest?'New best':'Round over'}</h1>
+    <div class="score">${G.score}</div>
+    ${dl?`<p>${G.official?`${DNAME[G.kind]} streak: <b>${st} ${st===1?'day':'days'}</b>. ${D(other).last===today()?'Both dailies done. See you tomorrow.':`${DNAME[other]} is still waiting for you.`}`:'Practice run. Your official score for today stays as it was.'}</p>`:''}
+    <div class="tiles"><div class="tile"><b>${dl?st:S.best[G.kind]}</b><span>${dl?'Daily streak':'Best'}</span></div>
+    <div class="tile"><b>${G.kind==='hunt'?G.cleared:G.correct}</b><span>${G.kind==='hunt'?'Boards cleared':'Correct'}</span></div>
+    <div class="tile"><b>${G.maxCombo}</b><span>Top streak</span></div></div>
+    <p>+${G.xp} XP. Today’s streak is covered.</p>
+    ${missReview()}
+    <div class="ctas">${dl&&G.official&&D(other).last!==today()?`<button class="btn primary" data-act="daily" data-k="${other}">Play ${DNAME[other]}</button>`:''}
+    <button class="btn ${dl&&G.official&&D(other).last!==today()?'':'primary'}" data-act="${dl?'daily':'game-'+G.kind}" data-k="${G.kind}">${dl?'Replay for practice':'Play again'}</button><button class="btn" data-act="tab" data-v="arcade">Back to the arcade</button></div></section>`;
+}
+
+/* ---------- views ---------- */
+function header(){
+  const st=liveStreak();
+  return `<header class="top"><div class="brand">Fret <span>Caddy</span></div>
+  <div class="stats"><span class="stat fire" title="Day streak">${I.flame}${st}</span><span class="stat" title="Total XP">${S.xp} XP</span>${soundBtn()}</div></header>`;
+}
+function homeView(){
+  const st=liveStreak(),done=S.last===today();
+  let nextI=LEVELS.findIndex((l,i)=>unlocked(i)&&passes(i)<3);if(nextI<0)nextI=LEVELS.length-1;
+  const any=LEVELS.some((l,i)=>passes(i)>0);
+  const days=[...Array(7)].map((_,k)=>{const d=new Date();d.setDate(d.getDate()-(6-k));return d;});
+  const week=days.map((d,k)=>{const on=S.days.includes(ds(d));return `<div class="day${on?' on':''}${k===6?' now':''}"><i>${on?'<span style="color:var(--on-accent)">'+I.check+'</span>':''}</i><span>${'SMTWTFS'[d.getDay()]}</span></div>`;}).join('');
+  const h=done?'Streak safe for today':st?`Keep the ${st}-day streak going`:'Start a streak today';
+  const p=done?'You practiced today. Extra reps still earn XP.':'One lesson or one daily review keeps the streak alive. About three minutes.';
+  const rows=LEVELS.map((l,i)=>{
+    const m=Math.min(passes(i),3),un=unlocked(i);
+    const st=!un?'locked':m>=3?'mastered':(i===nextI?'current':'passed');
+    return `<li class="lvl ${st}"><button class="lvl-btn" data-act="level" data-i="${i}" ${un?'':'disabled'}>
+      <span class="inlay">${st==='mastered'?I.check:i+1}</span>
+      <span class="lvl-txt"><span class="lvl-title">${l.title}</span>
+      <span class="lvl-meta">${un?`Mastery ${m}/3`:`Pass level ${i} to unlock`}</span>
+      ${un?`<span class="pips">${[0,1,2].map(k=>`<i class="${k<m?'on':''}"></i>`).join('')}</span>`:''}</span></button></li>`;}).join('');
+  return header()+`<section class="today"><div class="week">${week}</div><h1>${h}</h1><p>${p}</p>
+    ${any?(()=>{const tf=todayFmt(),rd=S.rev&&S.rev.last===today();
+      return `<div class="fmtcard"><span class="eyebrow">Today’s review${rd?' · done ✓':''}</span><b>${FORMATS[tf].name}</b><span>${FORMATS[tf].blurb}</span></div>
+      <details class="fmts"><summary>Swap the format</summary><div class="chips">${FKEYS.filter(k=>k!==tf).map(k=>`<button class="chip" data-act="review" data-f="${k}">${FORMATS[k].name}</button>`).join('')}</div></details>`;})():''}
+    <div class="ctas">${any?`<button class="btn primary" data-act="review" data-f="${todayFmt()}">Daily review: ${FORMATS[todayFmt()].name}</button>`:''}
+    <button class="btn${any?'':' primary'}" data-act="level" data-i="${nextI}">${any?'Next up':'Start'}: ${LEVELS[nextI].title}</button>
+    <button class="btn" data-act="tab" data-v="arcade">${dailiesDone()===2?'Both daily challenges done · Arcade':`Daily challenges: ${dailiesDone()} of 2 done`}</button></div>
+    ${S.missed.length?`<p class="note">${S.missed.length} missed ${S.missed.length===1?'question':'questions'} waiting in your review.</p>`:''}</section>
+    <button class="fpcard" data-act="explore"><span class="eyebrow">No clock</span><span class="fph">Free play</span>
+    <span class="fpd">Tap any fret to hear it, light up every C, or map a scale and its chords.</span></button>
+    <h2 class="section">Your neck · 12 levels</h2><ol class="path">${rows}</ol>`;
+}
+function lessonView(){
+  if(L.state==='intro'&&L.mode==='review'){
+    const F=FORMATS[L.fmt];
+    const extra=L.fmt==='weak'?`<p class="focus">Focus today: ${L.focus.map(i=>LEVELS[i].title).join(' · ')}</p>`
+      :L.fmt==='lives'&&S.bestLives?`<p class="focus">Your best: ${S.bestLives} correct</p>`
+      :L.fmt==='twins'||L.fmt==='detect'?`<p class="tip" style="font-size:16px">${XT[L.fmt==='twins'?'twin':'which'].tip}</p>`:'';
+    return `<div class="lhead"><button class="iconbtn" data-act="close" aria-label="Close review">${I.x}</button><div class="bar"><i style="width:0"></i></div><span></span>${soundBtn()}</div>
+    <section class="intro"><p class="lvno">Daily review${L.fmt===todayFmt()?` · #${dayNo()}`:''}</p><h1>${F.name}</h1><p class="tip">${F.blurb}</p>${extra}
+    <button class="btn primary" data-act="start">${L.fmt==='lives'?'Start':L.fmt==='clock'?'Start the clock':'Start 10 questions'}</button></section>`;
+  }
+  if(L.state==='intro'){
+    const l=LEVELS[L.li];
+    return `<div class="lhead"><button class="iconbtn" data-act="close" aria-label="Close lesson">${I.x}</button><div class="bar"><i style="width:0"></i></div><span></span>${soundBtn()}</div>
+    <section class="intro"><p class="lvno">Level ${String(L.li+1).padStart(2,'0')} · the trick</p><h1>${l.title}</h1><p class="tip">${l.tip}</p>
+    ${l.demo?`<div class="neckwrap">${neck({show:l.demo()})}</div>`:''}
+    <button class="btn primary" data-act="start">Start 10 questions</button></section>`;
+  }
+  const it=L.queue[0],q=it.q,fb=L.state==='feedback',last=L.last;
+  const lv=lvInfo(q.lv);
+  let show=(q.show||[]).slice();
+  if(fb){
+    if(q.type==='name'&&q.pos){show=[{...q.pos,label:SH[q.ans],cls:last.ok?'good':'bad'},...(q.reveal||[])];}
+    else if(q.type==='choice'&&q.reveal){show=q.reveal;}
+    else if(q.type==='find'){
+      show=show.concat(q.ans.map(a=>({...a,label:SH[pc(a.s,a.f)],cls:'good'})));
+      if(!last.ok)show.push({...last.v,label:SH[pc(last.v.s,last.v.f)],cls:'bad'});
+    }
+  }
+  const hasNeck=q.type==='find'||(q.show&&q.show.length);
+  const nk=hasNeck?`<div class="neckwrap">${neck({show,tap:q.type==='find'&&!fb?q.tstr:null,hl:q.type==='find'?q.tstr:null})}</div>`:'';
+  let pad='';
+  const cls=(ok,picked)=>!fb?'':ok?'good':picked?'bad':'fade';
+  if(q.type==='name'){
+    const order=q.grid==='nat'?[0,2,4,5,7,9,11]:[0,1,2,3,4,5,6,7,8,9,10,11];
+    pad=`<div class="pad ${q.grid}">${order.map(p=>`<button class="key ${cls(p===q.ans,fb&&last.v===p)}" data-act="ans" data-v="${p}" ${fb?'disabled':''}>${SH[p]}${q.grid==='all'&&!isNat(p)?`<small>${FL[p]}</small>`:''}</button>`).join('')}</div>`;
+  } else if(q.type==='choice'){
+    pad=`<div class="pad choice">${q.choices.map((c,i)=>`<button class="key ${cls(c===q.ans,fb&&last.v===i)}" data-act="ans" data-v="${i}" ${fb?'disabled':''}>${c}</button>`).join('')}</div>`;
+  } else if(!fb) pad=`<p class="hint">Tap a fret on the ${SNAME[q.tstr]} string</p>`;
+  const praise=['Nice.','Nailed it.','Clean.','Locked in.','That’s the one.','On the money.'];
+  const correctTxt=q.type==='name'?nm(q.ans):q.type==='choice'?q.ans:'';
+  const sheet=fb?`<div class="sheet ${last.ok?'':'bad'}" role="status" aria-live="polite"><div class="sheet-in">
+    <h2>${last.ok?rnd(praise):'Not quite'}</h2>
+    <p>${!last.ok&&correctTxt?`Answer: <strong>${correctTxt}</strong>. `:''}${q.explain}${!last.ok?' You’ll see this one again.':''}</p>
+    <button class="btn go" data-act="next">Continue</button></div></div>`:'';
+  let mid=`<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${L.total}" aria-valuenow="${L.done}"><i style="width:${L.done/L.total*100}%"></i></div>`;
+  if(L.fmt==='clock'){const left=clockLeft();
+    mid=`<div class="clockrow"><div class="bar timer"><i id="tbar" class="${left<15000?'low':''}" style="width:${left/CLOCK_MS*100}%"></i></div><span class="stat" id="tsec">${Math.ceil(left/1000)}s</span></div>`;}
+  if(L.fmt==='lives')mid=`<div class="hearts" aria-label="${L.lives} of 3 lives left">${[0,1,2].map(k=>`<i class="${k<L.lives?'':'gone'}">♥</i>`).join('')}<span>${L.correct} correct</span></div>`;
+  const fname=L.mode==='review'?(q.fromMissed?'Missed before':FORMATS[L.fmt].name):'';
+  return `<div class="lhead"><button class="iconbtn" data-act="close" aria-label="Close lesson">${I.x}</button>
+    ${mid}
+    <button class="iconbtn" data-act="tip" aria-pressed="${tipOpen}" aria-label="Show the trick">${I.bulb}</button>${soundBtn()}</div>
+    <p class="eyebrow">${it.retry?'Second try':L.mode==='review'?fname+(L.fmt==='clock'?` · ${L.done+1} of ${L.total}`:''):'Level '+(L.li+1)}${fname===lv.title?'':' · '+lv.title}</p>
+    <h1 class="prompt">${q.prompt}</h1>${q.sub?`<p class="sub">${q.sub}</p>`:''}
+    ${tipOpen?`<div class="tipbox"><strong>The trick</strong><p>${lv.tip}</p></div>`:''}
+    ${nk}${pad}${sheet}`;
+}
+function resultView(){
+  const r=L.result,pct=L.correct/L.total;
+  const lives=L.fmt==='lives',clock=L.fmt==='clock';
+  const title=L.mode==='review'?'Daily review · '+FORMATS[L.fmt].name:LEVELS[L.li].title;
+  const h=lives?(r.newBest?'New best':r.passed?'Strong run':'Three strikes')
+    :clock&&L.timeout?'Time’s up':pct===1?'Perfect run':r.passed?'Lesson complete':'Almost there';
+  const m=L.mode==='level'?Math.min(passes(L.li),3):null;
+  let msg=r.passed?(r.unlockedNew?`Unlocked: <strong>${r.unlockedNew}</strong>.`:L.mode==='level'?'Pass this level three times to master it.':'Missed questions are queued for next time.')
+    :lives?'Reach 10 correct to pass. Missed questions are saved for your daily review.'
+    :clock&&L.timeout?`The clock ran out with ${L.total-L.done} left. Missed questions are saved for your daily review.`
+    :'You need 7 of 10 on the first try to pass. Missed questions are saved for your daily review.';
+  if(clock&&r.bonus)msg=`Finished with ${r.bonus} seconds to spare: +${r.bonus} bonus XP. `+msg;
+  const t3=lives?[S.bestLives||0,'Best run']:clock?[r.bonus+'s','Time left']:m!=null?[m+'/3','Mastery']:[S.missed.length,'To review'];
+  return `<section class="result"><p class="eyebrow">${title}</p><h1>${h}</h1>
+    <div class="score">${L.correct}<small>${lives?' correct':'/'+L.total}</small></div>
+    <div class="tiles"><div class="tile"><b>+${r.xp}</b><span>XP earned</span></div>
+    <div class="tile"><b>${liveStreak()}</b><span>Day streak</span></div>
+    <div class="tile"><b>${t3[0]}</b><span>${t3[1]}</span></div></div>
+    <p>${msg}</p>
+    <div class="ctas"><button class="btn primary" data-act="home">Back to the neck</button>
+    <button class="btn" data-act="again">Go again</button></div></section>`;
+}
+/* ---------- scales & keys ---------- */
+const SCALES={
+  major:{name:'Major',iv:[0,2,4,5,7,9,11],deg:['1','2','3','4','5','6','7']},
+  minor:{name:'Natural minor',iv:[0,2,3,5,7,8,10],deg:['1','2','♭3','4','5','♭6','♭7'],m:1},
+  majPent:{name:'Major pentatonic',iv:[0,2,4,7,9],deg:['1','2','3','5','6']},
+  minPent:{name:'Minor pentatonic',iv:[0,3,5,7,10],deg:['1','♭3','4','5','♭7'],m:1},
+  blues:{name:'Blues',iv:[0,3,5,6,7,10],deg:['1','♭3','4','♭5','5','♭7'],m:1},
+  dorian:{name:'Dorian',iv:[0,2,3,5,7,9,10],deg:['1','2','♭3','4','5','6','♭7'],m:1},
+  mixo:{name:'Mixolydian',iv:[0,2,4,5,7,9,10],deg:['1','2','3','4','5','6','♭7']},
+  harmMin:{name:'Harmonic minor',iv:[0,2,3,5,7,8,11],deg:['1','2','♭3','4','5','♭6','7'],m:1},
+};
+const rootName=r=>[1,3,8,10].includes(r)?FL[r]:SH[r];
+const useFlats=(r,sc)=>[1,3,5,8,10].includes(r)||(SCALES[sc].m&&[0,2,7].includes(r));
+const spell=(p,fl)=>fl?FL[p]:SH[p];
+function chordsOf(r,sc){
+  const iv=SCALES[sc].iv;if(iv.length!==7)return[];
+  const fl=useFlats(r,sc),R=['I','II','III','IV','V','VI','VII'];
+  return iv.map((x,i)=>{
+    const t=(iv[(i+2)%7]-x+12)%12,f=(iv[(i+4)%7]-x+12)%12;
+    const q=t===4&&f===7?'':t===3&&f===7?'m':t===3&&f===6?'°':t===4&&f===8?'+':'';
+    const rn=(q==='m'||q==='°')?R[i].toLowerCase():R[i];
+    return {i,ivs:[x,iv[(i+2)%7],iv[(i+4)%7]],tones:[(r+x)%12,(r+iv[(i+2)%7])%12,(r+iv[(i+4)%7])%12],name:spell((r+x)%12,fl)+q,rn:rn+(q==='°'||q==='+'?q:'')};
+  });
+}
+const modeSeg=()=>`<div class="seg" role="group" aria-label="Free play mode"><button class="${EX.view!=='scales'?'on':''}" data-act="xview" data-v="notes">Notes</button><button class="${EX.view==='scales'?'on':''}" data-act="xview" data-v="scales">Scales & keys</button></div>`;
+function scaleView(){
+  const sc=SCALES[EX.scale],r=EX.root,fl=useFlats(r,EX.scale);
+  const pcs=sc.iv.map(x=>(r+x)%12),degOf=p=>sc.deg[pcs.indexOf(p)];
+  const chords=chordsOf(r,EX.scale),ch=EX.chord!=null?chords[EX.chord]:null;
+  const dots=new Map();
+  for(let s=0;s<6;s++)for(let f=0;f<=12;f++){
+    const p=pc(s,f);if(!pcs.includes(p))continue;
+    let cls=p===r?'root':'',label=EX.lbl==='deg'?degOf(p):spell(p,fl);
+    if(ch){if(ch.tones.includes(p)){cls=p===ch.root?'root':'';if(EX.lbl==='deg')label=['R','3','5'][ch.tones.indexOf(p)];}else cls='map acc';}
+    dots.set(s+'.'+f,{s,f,label,cls});
+  }
+  let tapped='Tap any fret to hear it and see where it sits in the scale.';
+  if(EX.sel){const{s,f}=EX.sel,p=pc(s,f),inS=pcs.includes(p);
+    dots.set(s+'.'+f,{s,f,label:inS?(EX.lbl==='deg'?degOf(p):spell(p,fl)):SH[p],cls:inS?'good':'bad'});
+    tapped=`<b>${spell(p,fl)}</b> · ${cap(SNAME[s])} string, ${fretTxt(f)} · ${inS?`degree ${degOf(p)} of the scale`:'not in this scale'}`;}
+  const title=`${rootName(r)} ${sc.name.toLowerCase()}`;
+  const spelled=pcs.map(p=>`<span class="sn${p===r?' r':''}${ch&&ch.tones.includes(p)?' c':''}"><b>${spell(p,fl)}</b><i>${degOf(p)}</i></span>`).join('');
+  const roots=[0,1,2,3,4,5,6,7,8,9,10,11].map(p=>`<button class="chip${EX.root===p?' on':''}" data-act="sroot" data-v="${p}" aria-pressed="${EX.root===p}">${rootName(p)}</button>`).join('');
+  const opts=Object.entries(SCALES).map(([k,v])=>`<option value="${k}"${k===EX.scale?' selected':''}>${v.name}</option>`).join('');
+  const chordRow=chords.length?`<h2 class="section" style="margin:16px 0 8px">Chords in the key · tap to light one up</h2>
+    <div class="chords">${chords.map(c=>`<button class="chd${EX.chord===c.i?' on':''}" data-act="schord" data-v="${c.i}" aria-pressed="${EX.chord===c.i}"><b>${c.rn}</b><span>${c.name}</span></button>`).join('')}</div>`:'';
+  return header()+`${EX.from==='arcade'?'<button class="back" data-act="tab" data-v="arcade">← Arcade</button>':''}<h1 class="page-h">Free play</h1>${modeSeg()}
+    <p class="lbl">Key</p><div class="chips">${roots}</div>
+    <div class="srow"><div class="selwrap"><label class="lbl" for="xscale">Scale</label><select id="xscale">${opts}</select></div>
+    <div><p class="lbl">Labels</p><div class="seg" style="margin:0" role="group" aria-label="Labels"><button class="${EX.lbl!=='deg'?'on':''}" data-act="slbl" data-v="names">Notes</button><button class="${EX.lbl==='deg'?'on':''}" data-act="slbl" data-v="deg">Degrees</button></div></div></div>
+    <section class="scard"><div class="shead"><div><p class="eyebrow">${ch?`${ch.rn} chord in ${title}`:`${pcs.length}-note scale`}</p><h2>${ch?ch.name+' · '+ch.tones.map(p=>spell(p,fl)).join(' '):title}</h2></div>
+    <button class="playbtn" data-act="splay" aria-label="${ch?'Strum the chord':'Play the scale'}">${I.play}</button></div>
+    <div class="spelled">${spelled}</div><p class="tapped" aria-live="polite">${tapped}</p></section>
+    ${chordRow}
+    <p class="legend" style="margin-top:12px"><span><i class="k root"></i>Root${ch?' of the chord':''}</span><span><i class="k acc2"></i>${ch?'Chord tone':'Scale tone'}</span>${ch?'<span><i class="k dimk"></i>Other scale tones</span>':''}</p>
+    <div class="neckwrap">${neckH({show:[...dots.values()],tapAll:true,act:'xtap'})}</div>${flipSeg()}`;
+}
+function playScale(){
+  const r=EX.root,base=45+((r-9+12)%12),sc=SCALES[EX.scale];
+  const chords=chordsOf(r,EX.scale),ch=EX.chord!=null?chords[EX.chord]:null;
+  if(ch){const m0=base+ch.ivs[0];[0,(ch.ivs[1]-ch.ivs[0]+12)%12,(ch.ivs[2]-ch.ivs[0]+12)%12,12].forEach((d,i)=>pluck(m0+d,i*.06));return;}
+  [...sc.iv,12].forEach((x,i)=>pluck(base+x,i*.26));
+}
+
+function exploreView(){
+  if(EX.view==='scales')return scaleView();
+  const X=EX, key=(s,f)=>s+'.'+f, dots=new Map();
+  for(let s=0;s<6;s++)for(let f=0;f<=12;f++){
+    const p=pc(s,f),acc=!isNat(p);let on=false,cls='map'+(acc?' acc':'');
+    if(X.focus!==null){on=p===X.focus;cls='';}
+    else if(X.mode==='all')on=true;
+    else if(X.mode==='nat')on=!acc;
+    else on=X.revealed.has(key(s,f));
+    if(on)dots.set(key(s,f),{s,f,label:SH[p],cls});
+  }
+  let info=`<p class="xempty">Tap any fret to hear it and see where else it lives.</p>`;
+  if(X.sel){
+    const {s,f}=X.sel,p=pc(s,f),m=OPEN[s]+f;
+    const uni=[];for(let s2=0;s2<6;s2++){const f2=m-OPEN[s2];if(s2!==s&&f2>=0&&f2<=12)uni.push({s:s2,f:f2});}
+    const up=s<=1?2:s<=3?3:null, oct=up&&f+up<=12?{s:s+2,f:f+up}:null;
+    uni.forEach(u=>dots.set(key(u.s,u.f),{...u,label:SH[p],cls:'ghost'}));
+    if(oct)dots.set(key(oct.s,oct.f),{...oct,label:SH[p],cls:'root'});
+    dots.set(key(s,f),{s,f,label:SH[p],cls:'good'});
+    const where=a=>`${SNAME[a.s]} ${fretTxt(a.f)}`;
+    info=`<div class="xnote">${SH[p]}${acc2(p)}</div><div class="xtxt"><b>${cap(SNAME[s])} string, ${fretTxt(f)}</b>
+      <span><i class="k ghost"></i>Same pitch: ${uni.length?uni.map(where).join(', '):'only here'}</span>
+      ${oct?`<span><i class="k root"></i>Octave up (${up===2?'2 over, 2 up':'2 over, 3 up'}): ${where(oct)}</span>`:''}</div>`;
+  }
+  const modes=[['hidden','Hidden'],['nat','Naturals'],['all','All notes']];
+  const chips=[0,1,2,3,4,5,6,7,8,9,10,11].map(p=>`<button class="chip${X.focus===p?' on':''}" data-act="xfocus" data-v="${p}" aria-pressed="${X.focus===p}">${SH[p]}</button>`).join('');
+  return header()+`${EX.from==='arcade'?'<button class="back" data-act="tab" data-v="arcade">← Arcade</button>':''}<h1 class="page-h">Free play</h1>${modeSeg()}
+    <p class="sub" style="margin:10px 0 0">${X.mode==='hidden'&&X.focus===null?'Notes are hidden. Guess, then tap to check.':'Tap a fret to hear it. Pick a note to light up every spot it lives.'}</p>
+    <div class="seg" role="group" aria-label="Labels">${modes.map(([v,t])=>`<button class="${X.mode===v&&X.focus===null?'on':''}" data-act="xmode" data-v="${v}">${t}</button>`).join('')}</div>
+    <div class="chips" role="group" aria-label="Show every">${chips}</div>
+    <div class="xinfo" aria-live="polite">${info}</div>
+    <div class="neckwrap">${neckH({show:[...dots.values()],tapAll:true,act:'xtap'})}</div>
+    ${flipSeg()}
+    ${X.mode==='hidden'&&X.revealed.size?`<button class="btn" style="width:100%" data-act="xreset">Hide them all again (${X.revealed.size} revealed)</button>`:''}`;
+}
+const acc2=p=>isNat(p)?'':`<small>${FL[p]}</small>`;
+function tipsView(){
+  return header()+`<h1 class="page-h">Tricks</h1><p class="sub" style="margin:0">Every shortcut from the levels, in one place.</p>
+    <h2 class="section">In level order</h2>
+    <ol class="tips">${LEVELS.map((l,i)=>`<li><span class="tnum">${i+1}</span><div><h3>${l.title}</h3><p>${l.tip}</p></div></li>`).join('')}</ol>`;
+}
+
+/* ---------- render + events ---------- */
+const app=document.getElementById('app'),nav=document.getElementById('nav');
+function render(toTop){
+  const full=['lesson','result','game','gameover'].includes(view);
+  app.className='app'+(full?' lesson-mode':'')+(view==='lesson'&&L&&L.state==='feedback'?' has-sheet':'');
+  app.innerHTML=view==='home'?homeView():view==='tips'?tipsView():view==='explore'?exploreView():view==='arcade'?arcadeView():view==='game'?gameView():view==='gameover'?gameoverView():view==='lesson'?lessonView():resultView();
+  nav.hidden=full;
+  const tab=(v,icon,t)=>`<button class="${view===v?'on':''}" data-act="tab" data-v="${v}">${icon}<span>${t}</span></button>`;
+  nav.innerHTML=tab('home',I.path,'Learn')+tab('arcade',I.flame,'Arcade')+tab('explore',I.eye,'Free play')+tab('tips',I.book,'Tricks');
+  if(toTop)window.scrollTo(0,0);
+}
+function act(a,d){
+  switch(a){
+    case 'level':startLevel(+d.i);break;
+    case 'review':startReview(d.f);break;
+    case 'start':if(L.mode==='review')beginReview();else{L.state='ask';render(true);}break;
+    case 'ans':answer(+d.v);break;
+    case 'tap':answer({s:+d.s,f:+d.f});break;
+    case 'next':next();break;
+    case 'close':case 'home':clearInterval(timerId);view='home';L=null;render(true);break;
+    case 'again':L.mode==='level'?startLevel(L.li):startReview(L.fmt);break;
+    case 'tip':tipOpen=!tipOpen;render();break;
+    case 'sound':S.sound=!S.sound;save();render();if(S.sound)pluck(52);break;
+    case 'tab':if(d.v==='explore')EX.from=null;view=d.v;render(true);break;
+    case 'daily':startDaily(d.k||'hunt');break;
+    case 'game-hunt':startGame('hunt');break;
+    case 'game-speed':startGame('speed');break;
+    case 'explore':EX.from=view;if(d.v)EX.view=d.v;EX.sel=null;view='explore';render(true);break;
+    case 'gtap':if(G&&view==='game')huntTap(+d.s,+d.f);break;
+    case 'gans':if(G&&view==='game')speedAns(+d.v);break;
+    case 'quit':quitGame();break;
+    case 'flip':S.lowTop=d.v==='1';save();render();break;
+    case 'arcacc':S.arcAcc=d.v==='1';save();render();break;
+    case 'xtap':{const s=+d.s,f=+d.f;EX.sel={s,f};if(EX.mode==='hidden')EX.revealed.add(s+'.'+f);pluck(OPEN[s]+f);render();break;}
+    case 'xview':EX.view=d.v;EX.sel=null;render();break;
+    case 'sroot':EX.root=+d.v;EX.chord=null;EX.sel=null;render();break;
+    case 'slbl':EX.lbl=d.v;render();break;
+    case 'schord':EX.chord=EX.chord===+d.v?null:+d.v;EX.sel=null;render();if(EX.chord!=null)playScale();break;
+    case 'splay':playScale();break;
+    case 'xmode':EX.mode=d.v;EX.focus=null;EX.sel=null;render();break;
+    case 'xfocus':EX.focus=EX.focus===+d.v?null:+d.v;EX.sel=null;render();break;
+    case 'xreset':EX.revealed.clear();EX.sel=null;render();break;
+  }
+}
+function handler(e){const t=e.target.closest('[data-act]');if(!t||t.disabled)return;act(t.dataset.act,t.dataset);}
+app.addEventListener('change',e=>{if(e.target.id==='xscale'){EX.scale=e.target.value;EX.chord=null;EX.sel=null;render();}});
+app.addEventListener('click',handler);nav.addEventListener('click',handler);
+app.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('rect[data-act]')){e.preventDefault();handler(e);}});
+render();
+</script>
+
+</body></html>
