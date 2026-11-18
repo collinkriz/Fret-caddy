@@ -277,6 +277,23 @@ button{font:inherit;color:inherit}
 .hearts i{font-style:normal}
 .hearts i.gone{color:var(--line)}
 .hearts span{margin-left:auto;font:500 12px var(--f-mono);color:var(--muted)}
+.thead{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.tcount{font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tcount.all{color:var(--on-good);background:var(--good);padding:4px 10px;border-radius:999px}
+.tasks{display:grid;gap:8px}
+.task{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);box-shadow:0 3px 0 var(--line);cursor:pointer;min-height:60px}
+.task:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.tchk{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:2px solid var(--line)}
+.ttxt{flex:1;display:grid;gap:2px;min-width:0}
+.ttxt b{font:700 17px/1.15 var(--f-body)}
+.ttxt small{font:500 12px/1.2 var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.tgo{flex:none;font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.task.next{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:0 3px 0 var(--accent-deep)}
+.task.next .tchk{border-color:var(--on-accent)}
+.task.next small,.task.next .tgo{color:var(--on-accent);opacity:.9}
+.task.done{background:var(--good);border-color:var(--good);color:var(--on-good);box-shadow:0 3px 0 var(--good-deep)}
+.task.done .tchk{border:0;background:var(--on-good);color:var(--good)}
+.task.done small,.task.done .tgo{color:var(--on-good);opacity:.9}
 .fmtcard{display:grid;gap:4px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);margin-top:12px}
 .fmtcard b{font:800 22px/1 var(--f-display);text-transform:uppercase}
 .fmtcard span{font-size:14px}
@@ -809,7 +826,7 @@ function celebrate(big){
 function arcadeView(){
   const b=S.best||{};
   const card=(act,title,desc,meta)=>`<button class="gcard" data-act="${act}"><span class="gtitle">${title}</span><span class="gdesc">${desc}</span><span class="gmeta">${meta}</span></button>`;
-  return header()+`<h1 class="page-h">Arcade</h1><p class="sub" style="margin:0">Free rounds, as many as you like. Any game counts toward your main streak. Daily challenges live on the Learn tab.</p>
+  return header()+`<h1 class="page-h">Arcade</h1><p class="sub" style="margin:0">Any game counts toward your main streak. Your daily challenges are also on the Learn tab.</p>${dailiesBlock()}
     <h2 class="section">Free rounds</h2>
     <div class="seg" role="group" aria-label="Notes in play"><button class="${!S.arcAcc?'on':''}" data-act="arcacc" data-v="0">Naturals</button><button class="${S.arcAcc?'on':''}" data-act="arcacc" data-v="1">With sharps & flats</button></div>
     ${flipSeg()}
@@ -883,8 +900,7 @@ function homeView(){
   const any=LEVELS.some((l,i)=>passes(i)>0);
   const days=[...Array(7)].map((_,k)=>{const d=new Date();d.setDate(d.getDate()-(6-k));return d;});
   const week=days.map((d,k)=>{const on=S.days.includes(ds(d));return `<div class="day${on?' on':''}${k===6?' now':''}"><i>${on?'<span style="color:var(--on-accent)">'+I.check+'</span>':''}</i><span>${'SMTWTFS'[d.getDay()]}</span></div>`;}).join('');
-  const h=done?'Streak safe for today':st?`Keep the ${st}-day streak going`:'Start a streak today';
-  const p=done?'You practiced today. Extra reps still earn XP.':'One lesson or one daily review keeps the streak alive. About three minutes.';
+  const h=done?'Streak safe today':st?`Keep your ${st}-day streak`:'Start a streak today';
   const rows=LEVELS.map((l,i)=>{
     const m=Math.min(passes(i),3),un=unlocked(i);
     const st=!un?'locked':m>=3?'mastered':(i===nextI?'current':'passed');
@@ -893,22 +909,22 @@ function homeView(){
       <span class="lvl-txt"><span class="lvl-title">${l.title}</span>
       <span class="lvl-meta">${un?`Mastery ${m}/3`:`Pass level ${i} to unlock`}</span>
       ${un?`<span class="pips">${[0,1,2].map(k=>`<i class="${k<m?'on':''}"></i>`).join('')}</span>`:''}</span></button></li>`;}).join('');
-  return header()+`<section class="today"><div class="week">${week}</div><h1>${h}</h1><p>${p}</p>
-    ${any?(()=>{const tf=todayFmt(),rd=S.rev&&S.rev.last===today();
-      return `<div class="fmtcard"><span class="eyebrow">Today’s review${rd?' · done ✓':''}</span><b>${FORMATS[tf].name}</b><span>${FORMATS[tf].blurb}</span></div>
-      <details class="fmts"><summary>Swap the format</summary><div class="chips">${FKEYS.filter(k=>k!==tf).map(k=>`<button class="chip" data-act="review" data-f="${k}">${FORMATS[k].name}</button>`).join('')}</div></details>`;})():''}
-    ${(()=>{const rd=S.rev&&S.rev.last===today(),ld=S.lvlLast===today(),nm=FORMATS[todayFmt()].name;
-      const doneBtn=(act,attrs,top,sub)=>`<button class="btn done" data-act="${act}" ${attrs}><span class="bchk">${I.check}</span><span class="btxt">${top}<small>${sub}</small></span></button>`;
-      const rev=!any?'':rd?doneBtn('review',`data-f="${todayFmt()}"`,`Daily review done`,`${nm} · tap to play again`)
-        :`<button class="btn primary" data-act="review" data-f="${todayFmt()}">Daily review: ${nm}</button>`;
-      const lvl=ld?doneBtn('level',`data-i="${nextI}"`,`Lesson done today`,`Next up: ${LEVELS[nextI].title}`)
-        :`<button class="btn${!any||rd?' primary':''}" data-act="level" data-i="${nextI}">${any?'Next up':'Start'}: ${LEVELS[nextI].title}</button>`;
-      return `<div class="ctas">${rev}${lvl}`;})()}
-    </div>
-    ${S.missed.length?`<p class="note">${S.missed.length} missed ${S.missed.length===1?'question':'questions'} waiting in your review.</p>`:''}</section>
-    ${dailiesBlock()}
-    <button class="fpcard" data-act="explore"><span class="eyebrow">No clock</span><span class="fph">Free play</span>
-    <span class="fpd">Tap any fret to hear it, light up every C, or map a scale and its chords.</span></button>
+  /* today's to-do list: one row per task, green with a check once it's done */
+  const tf=todayFmt(),mc=S.missed.length;
+  const tasks=[];
+  if(any)tasks.push({done:S.rev&&S.rev.last===today(),act:'review',attrs:`data-f="${tf}"`,t:'Daily review',sub:FORMATS[tf].name});
+  tasks.push({done:S.lvlLast===today(),act:'level',attrs:`data-i="${nextI}"`,t:any?'Next lesson':'First lesson',sub:LEVELS[nextI].title});
+  ['hunt','speed'].forEach(k=>{const dd=D(k),r=dd.res[today()];tasks.push({done:dd.last===today(),act:'daily',attrs:`data-k="${k}"`,t:DNAME[k],sub:r?`${starStr(starsOf(k,r))} · ${dlyStreak(k)}-day streak`:'60-second daily challenge'});});
+  const nDone=tasks.filter(t=>t.done).length,firstOpen=tasks.findIndex(t=>!t.done);
+  const list=tasks.map((t,i)=>`<button class="task${t.done?' done':i===firstOpen?' next':''}" data-act="${t.act}" ${t.attrs}>
+      <span class="tchk">${t.done?I.check:''}</span><span class="ttxt"><b>${t.t}</b><small>${t.sub}</small></span>
+      <span class="tgo">${t.done?'Done':'Play'}</span></button>`).join('');
+  return header()+`<section class="today">
+    <div class="week">${week}</div><h1>${h}</h1>
+    <div class="thead"><span class="eyebrow">Today</span><span class="tcount${nDone===tasks.length?' all':''}">${nDone===tasks.length?'✓ All done':`${nDone} of ${tasks.length} done`}</span></div>
+    <div class="tasks">${list}</div>
+    ${any?`<details class="fmts"><summary>Swap review format</summary><div class="chips">${FKEYS.filter(k=>k!==tf).map(k=>`<button class="chip" data-act="review" data-f="${k}">${FORMATS[k].name}</button>`).join('')}</div></details>`:''}
+    </section>
     <h2 class="section">Your neck · 12 levels</h2><ol class="path">${rows}</ol>`;
 }
 function lessonView(){
@@ -1099,7 +1115,7 @@ function tipsView(){
 /* ---------- render + events ---------- */
 const app=document.getElementById('app'),nav=document.getElementById('nav');
 /* Last-updated stamp: bump UPDATED on every push */
-const UPDATED='2026-11-17T19:35:00-05:00';
+const UPDATED='2026-11-17T19:45:00-05:00';
 const stampHTML=()=>`<div class="stamp">Last updated ${new Date(UPDATED).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Detroit',timeZoneName:'short'})}</div>`;
 function render(toTop){
   const full=['lesson','result','game','gameover'].includes(view);
