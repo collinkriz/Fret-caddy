@@ -146,6 +146,11 @@ button{font:inherit;color:inherit}
 .sheet h2{margin:0;font:700 26px/1 var(--f-display);text-transform:uppercase;color:var(--good)}
 .sheet.bad h2{color:var(--bad)}
 .sheet p{margin:0}
+.btn.done{display:flex;align-items:center;justify-content:flex-start;gap:10px;background:var(--good);border-color:var(--good);color:var(--on-good);box-shadow:0 3px 0 var(--good-deep)}
+.btn.done:active{box-shadow:0 1px 0 var(--good-deep)}
+.btn.done .bchk{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--on-good);color:var(--good)}
+.btn.done .btxt{display:grid;text-align:left;line-height:1.15}
+.btn.done small{font:500 12px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;opacity:.85}
 .btn.go{background:var(--good);border-color:var(--good);color:var(--on-good);box-shadow:0 3px 0 var(--good-deep)}
 .sheet.bad .btn.go{background:var(--bad);border-color:var(--bad);color:#fff;box-shadow:0 3px 0 var(--bad-deep)}
 
@@ -672,7 +677,7 @@ function finish(){
   if(L.mode==='level'&&passed){
     const id=LEVELS[L.li].id,pr=S.prog[id]||{passes:0,best:0};
     if(pr.passes===0&&LEVELS[L.li+1])unlockedNew=LEVELS[L.li+1].title;
-    pr.passes++;pr.best=Math.max(pr.best,L.correct);S.prog[id]=pr;
+    pr.passes++;pr.best=Math.max(pr.best,L.correct);S.prog[id]=pr;S.lvlLast=today();
   }
   L.result={passed,xp,unlockedNew,bonus,newBest};
   save();view='result';render(true);
@@ -892,8 +897,13 @@ function homeView(){
     ${any?(()=>{const tf=todayFmt(),rd=S.rev&&S.rev.last===today();
       return `<div class="fmtcard"><span class="eyebrow">Today’s review${rd?' · done ✓':''}</span><b>${FORMATS[tf].name}</b><span>${FORMATS[tf].blurb}</span></div>
       <details class="fmts"><summary>Swap the format</summary><div class="chips">${FKEYS.filter(k=>k!==tf).map(k=>`<button class="chip" data-act="review" data-f="${k}">${FORMATS[k].name}</button>`).join('')}</div></details>`;})():''}
-    <div class="ctas">${any?`<button class="btn primary" data-act="review" data-f="${todayFmt()}">Daily review: ${FORMATS[todayFmt()].name}</button>`:''}
-    <button class="btn${any?'':' primary'}" data-act="level" data-i="${nextI}">${any?'Next up':'Start'}: ${LEVELS[nextI].title}</button>
+    ${(()=>{const rd=S.rev&&S.rev.last===today(),ld=S.lvlLast===today(),nm=FORMATS[todayFmt()].name;
+      const doneBtn=(act,attrs,top,sub)=>`<button class="btn done" data-act="${act}" ${attrs}><span class="bchk">${I.check}</span><span class="btxt">${top}<small>${sub}</small></span></button>`;
+      const rev=!any?'':rd?doneBtn('review',`data-f="${todayFmt()}"`,`Daily review done`,`${nm} · tap to play again`)
+        :`<button class="btn primary" data-act="review" data-f="${todayFmt()}">Daily review: ${nm}</button>`;
+      const lvl=ld?doneBtn('level',`data-i="${nextI}"`,`Lesson done today`,`Next up: ${LEVELS[nextI].title}`)
+        :`<button class="btn${!any||rd?' primary':''}" data-act="level" data-i="${nextI}">${any?'Next up':'Start'}: ${LEVELS[nextI].title}</button>`;
+      return `<div class="ctas">${rev}${lvl}`;})()}
     </div>
     ${S.missed.length?`<p class="note">${S.missed.length} missed ${S.missed.length===1?'question':'questions'} waiting in your review.</p>`:''}</section>
     ${dailiesBlock()}
@@ -1089,7 +1099,7 @@ function tipsView(){
 /* ---------- render + events ---------- */
 const app=document.getElementById('app'),nav=document.getElementById('nav');
 /* Last-updated stamp: bump UPDATED on every push */
-const UPDATED='2026-11-17T19:40:00-05:00';
+const UPDATED='2026-11-17T19:35:00-05:00';
 const stampHTML=()=>`<div class="stamp">Last updated ${new Date(UPDATED).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Detroit',timeZoneName:'short'})}</div>`;
 function render(toTop){
   const full=['lesson','result','game','gameover'].includes(view);
