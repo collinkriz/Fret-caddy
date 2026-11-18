@@ -281,6 +281,39 @@ button{font:inherit;color:inherit}
 .fmts .chip{padding:9px 12px;font-size:16px;white-space:nowrap}
 .focus{margin:0;font:500 13px var(--f-mono);color:var(--muted)}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+/* daily challenge done state + celebration */
+.dhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:28px 0 0}
+.dhead .section{margin:0}
+.dcount{font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.dcount.all{color:var(--on-good);background:var(--good);padding:4px 10px;border-radius:999px}
+.daily.done{background:var(--good-deep);box-shadow:inset 0 0 0 2px var(--good)}
+.daily.done .dp,.daily.done .dmeta,.daily.done .dflame span{color:#ffffffcc}
+.daily.done .dp b{color:#fff}
+.daily.done .dflame{color:#fff}
+.daily.done .dday{background:#0000002e;color:#ffffffcc}
+.daily.done .dday.on .dstars{color:#ffd97a}
+.daily.done .dday.now{outline-color:#fff}
+.daily.done .btn:not(.primary){background:#00000033;border-color:#ffffff66;color:#fff}
+.daily.done .eyebrow{color:#ffffffcc!important}
+.dbadge{display:inline-flex;align-items:center;gap:8px;margin-top:6px;font:800 28px/1 var(--f-display);text-transform:uppercase;color:#fff}
+.dbadge i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#fff;color:var(--good-deep)}
+.dbadge i svg{width:18px;height:18px}
+.dstarsbig{font-size:22px;letter-spacing:2px;color:#ffd97a;margin-top:4px}
+.cbanner{display:flex;align-items:center;gap:14px;padding:16px;border-radius:16px;background:var(--good);color:var(--on-good);animation:pop .5s cubic-bezier(.2,1.6,.4,1) both}
+.cbanner .ccheck{flex:none;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--on-good);color:var(--good);animation:pop .6s .15s cubic-bezier(.2,1.6,.4,1) both}
+.cbanner .ccheck svg{width:34px;height:34px}
+.cbanner p{margin:0;font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.1em;opacity:.85}
+.cbanner h2{margin:2px 0 0;font:800 30px/1 var(--f-display);text-transform:uppercase}
+.cbanner.both{background:linear-gradient(135deg,var(--good),var(--accent))}
+.bigstars{display:flex;gap:6px;font-size:52px;line-height:1}
+.bigstars span{color:var(--line);animation:pop .45s cubic-bezier(.2,1.6,.4,1) both}
+.bigstars span.on{color:var(--accent)}
+.newbest{display:inline-block;background:var(--accent);color:var(--on-accent);padding:4px 10px;border-radius:999px;font:700 12px var(--f-mono);text-transform:uppercase;letter-spacing:.1em;animation:pop .5s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes pop{from{transform:scale(.3);opacity:0}}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50}
+.confetti i{position:absolute;top:-16px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translate(var(--dx),110vh) rotate(var(--r));opacity:.9}}
+@media (prefers-reduced-motion: reduce){.confetti{display:none}.cbanner,.cbanner .ccheck,.bigstars span,.newbest{animation:none}}
 </style>
 
 <div id="app" class="app"></div>
@@ -735,28 +768,43 @@ function endGame(){
   G.newBest=G.score>old&&G.score>0;S.best[G.kind]=Math.max(old,G.score);
   G.xp=Math.round(G.score/10)+5;S.xp+=G.xp;markDay();save();
   view='gameover';render(true);
+  celebrate((G.daily&&G.official)||G.newBest);
 }
-function quitGame(){clearInterval(timerId);G=null;view='arcade';render(true);}
+function quitGame(){clearInterval(timerId);const back=G&&G.daily?'home':'arcade';G=null;view=back;render(true);}
 
-function arcadeView(){
-  const b=S.best||{};
-  const card=(act,title,desc,meta)=>`<button class="gcard" data-act="${act}"><span class="gtitle">${title}</span><span class="gdesc">${desc}</span><span class="gmeta">${meta}</span></button>`;
-  const ds7=[...Array(7)].map((_,k)=>{const d=new Date();d.setDate(d.getDate()-(6-k));return d;});
-  const dailyCard=k=>{
-    const dd=D(k),done=dd.last===today(),res=dd.res[today()];
-    const week=ds7.map((d,i)=>{const r=dd.res[ds(d)];return `<div class="dday${r?' on':''}${i===6?' now':''}"><span class="dstars">${r?starStr(starsOf(k,r)):'·'}</span><span>${'SMTWTFS'[d.getDay()]}</span></div>`;}).join('');
-    const doneTxt=k==='hunt'?`You scored <b>${res?.score}</b> and cleared ${res?.boards} ${res?.boards===1?'board':'boards'}`:`You scored <b>${res?.score}</b> with ${res?.correct} correct`;
-    const rules=k==='hunt'?'Find every spot each note lives. Clear 1, 3 or 5 boards for one, two or three stars.':'Name the dots as fast as you can. Get 10, 20 or 30 right for one, two or three stars.';
-    return `<section class="daily">
+function dailyCard(k){
+  const ds7=[...Array(7)].map((_,j)=>{const d=new Date();d.setDate(d.getDate()-(6-j));return d;});
+  const dd=D(k),done=dd.last===today(),res=dd.res[today()]||{};
+  const week=ds7.map((d,i)=>{const r=dd.res[ds(d)];return `<div class="dday${r?' on':''}${i===6?' now':''}"><span class="dstars">${r?starStr(starsOf(k,r)):'·'}</span><span>${'SMTWTFS'[d.getDay()]}</span></div>`;}).join('');
+  const doneTxt=k==='hunt'?`You scored <b>${res.score}</b> and cleared ${res.boards} ${res.boards===1?'board':'boards'}.`:`You scored <b>${res.score}</b> with ${res.correct} correct.`;
+  const rules=k==='hunt'?'Find every spot each note lives. Clear 1, 3 or 5 boards for one, two or three stars.':'Name the dots as fast as you can. Get 10, 20 or 30 right for one, two or three stars.';
+  return `<section class="daily${done?' done':''}">
     <div class="drow"><div><p class="eyebrow" style="color:var(--accent)">${DNAME[k]} #${dayNo()}</p>
-    <h2 class="dh">${done?'Done for today':'Ready to play'}</h2></div>
+    ${done?`<div class="dbadge"><i>${I.check}</i>Done</div><div class="dstarsbig" aria-label="${starsOf(k,res)} of 3 stars">${starStr(starsOf(k,res))}</div>`:`<h2 class="dh">Ready to play</h2>`}</div>
     <div class="dflame">${I.flame}<b>${dlyStreak(k)}</b><span>day streak</span></div></div>
-    <p class="dp">${done?`${doneTxt} ${starStr(starsOf(k,res||{}))}. Practice replays get fresh notes. New official run at midnight.`:`One official run per day. Replays after that are practice with fresh notes. ${rules}`}</p>
+    <p class="dp">${done?`${doneTxt} New official run at midnight.`:`One official run per day. ${rules}`}</p>
     <div class="dweek">${week}</div>
     <button class="btn ${done?'':'primary'}" data-act="daily" data-k="${k}">${done?'Replay for practice':'Play '+DNAME[k]}</button>
     <p class="dmeta">Best daily streak: ${dd.best} ${dd.best===1?'day':'days'}</p></section>`;
-  };
-  return header()+`<h1 class="page-h">Arcade</h1><p class="sub" style="margin:0">${dailiesDone()}/2 daily challenges done today. Any game counts toward your main streak.</p>${dailyCard('hunt')}${dailyCard('speed')}
+}
+function dailiesBlock(){
+  const n=dailiesDone();
+  return `<div class="dhead"><h2 class="section">Daily challenges</h2><span class="dcount${n===2?' all':''}">${n===2?'✓ Both done':`${n} of 2 done`}</span></div>${dailyCard('hunt')}${dailyCard('speed')}`;
+}
+/* little party: confetti + a rising arpeggio */
+function celebrate(big){
+  [60,64,67,72].concat(big?[76,79,84]:[]).forEach((m,i)=>pluck(m,i*.11));
+  try{navigator.vibrate&&navigator.vibrate(big?[40,60,40,60,120]:[40,60,80]);}catch(e){}
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const c=document.createElement('div');c.className='confetti';
+  const cols=['var(--accent)','var(--good)','#ffd97a','var(--bad)','var(--pearl)','#5aa9e6'];
+  c.innerHTML=[...Array(big?110:60)].map(()=>`<i style="left:${Math.random()*100}%;background:${cols[Math.floor(Math.random()*cols.length)]};--dx:${(Math.random()*160-80).toFixed(0)}px;--r:${(Math.random()*900-450).toFixed(0)}deg;animation-duration:${(1.8+Math.random()*1.6).toFixed(2)}s;animation-delay:${(Math.random()*.5).toFixed(2)}s"></i>`).join('');
+  document.body.appendChild(c);setTimeout(()=>c.remove(),4500);
+}
+function arcadeView(){
+  const b=S.best||{};
+  const card=(act,title,desc,meta)=>`<button class="gcard" data-act="${act}"><span class="gtitle">${title}</span><span class="gdesc">${desc}</span><span class="gmeta">${meta}</span></button>`;
+  return header()+`<h1 class="page-h">Arcade</h1><p class="sub" style="margin:0">Free rounds, as many as you like. Any game counts toward your main streak. Daily challenges live on the Learn tab.</p>
     <h2 class="section">Free rounds</h2>
     <div class="seg" role="group" aria-label="Notes in play"><button class="${!S.arcAcc?'on':''}" data-act="arcacc" data-v="0">Naturals</button><button class="${S.arcAcc?'on':''}" data-act="arcacc" data-v="1">With sharps & flats</button></div>
     ${flipSeg()}
@@ -802,7 +850,11 @@ function missReview(){
 function gameoverView(){
   const dl=G.daily;
   const st=dlyStreak(G.kind),other=G.kind==='hunt'?'speed':'hunt';
-  return `<section class="result"><p class="eyebrow">${dl?`${DNAME[G.kind]} #${dayNo()}${G.official?'':' · practice'}`:GAMES[G.kind]} · time’s up</p><h1>${dl?starStr(starsOf(G.kind,{boards:G.cleared,correct:G.correct})):G.newBest?'New best':'Round over'}</h1>
+  const n=dl?starsOf(G.kind,{boards:G.cleared,correct:G.correct}):0,both=dailiesDone()===2;
+  const banner=dl&&G.official?`<div class="cbanner${both?' both':''}" role="status"><span class="ccheck">${I.check}</span><div><p>${both?'2 of 2 · all done today':'Daily challenge complete'}</p><h2>${both?'Both dailies done!':`${DNAME[G.kind]} done!`}</h2></div></div>`
+    :!dl?`<div class="cbanner" role="status"><span class="ccheck">${I.check}</span><div><p>${GAMES[G.kind]} · round complete</p><h2>${G.newBest?'New best score!':'Round complete!'}</h2></div></div>`:'';
+  const starsRow=dl?`<div class="bigstars" aria-label="${n} of 3 stars">${[0,1,2].map(i=>`<span class="${i<n?'on':''}" style="animation-delay:${.3+i*.25}s">★</span>`).join('')}</div>`:'';
+  return `<section class="result">${banner}<p class="eyebrow">${dl?`${DNAME[G.kind]} #${dayNo()}${G.official?'':' · practice'}`:GAMES[G.kind]} · time’s up</p>${dl?starsRow:`<h1>${G.newBest?'New best':'Round over'}</h1>`}${G.newBest?`<span class="newbest" style="justify-self:start">New personal best</span>`:''}
     <div class="score">${G.score}</div>
     ${dl?`<p>${G.official?`${DNAME[G.kind]} streak: <b>${st} ${st===1?'day':'days'}</b>. ${D(other).last===today()?'Both dailies done. See you tomorrow.':`${DNAME[other]} is still waiting for you.`}`:'Practice run. Your official score for today stays as it was.'}</p>`:''}
     <div class="tiles"><div class="tile"><b>${dl?st:S.best[G.kind]}</b><span>${dl?'Daily streak':'Best'}</span></div>
@@ -811,7 +863,7 @@ function gameoverView(){
     <p>+${G.xp} XP. Today’s streak is covered.</p>
     ${missReview()}
     <div class="ctas">${dl&&G.official&&D(other).last!==today()?`<button class="btn primary" data-act="daily" data-k="${other}">Play ${DNAME[other]}</button>`:''}
-    <button class="btn ${dl&&G.official&&D(other).last!==today()?'':'primary'}" data-act="${dl?'daily':'game-'+G.kind}" data-k="${G.kind}">${dl?'Replay for practice':'Play again'}</button><button class="btn" data-act="tab" data-v="arcade">Back to the arcade</button></div></section>`;
+    <button class="btn ${dl&&G.official&&D(other).last!==today()?'':'primary'}" data-act="${dl?'daily':'game-'+G.kind}" data-k="${G.kind}">${dl?'Replay for practice':'Play again'}</button><button class="btn" data-act="tab" data-v="${dl?'home':'arcade'}">${dl?'Back home':'Back to the arcade'}</button></div></section>`;
 }
 
 /* ---------- views ---------- */
@@ -842,8 +894,9 @@ function homeView(){
       <details class="fmts"><summary>Swap the format</summary><div class="chips">${FKEYS.filter(k=>k!==tf).map(k=>`<button class="chip" data-act="review" data-f="${k}">${FORMATS[k].name}</button>`).join('')}</div></details>`;})():''}
     <div class="ctas">${any?`<button class="btn primary" data-act="review" data-f="${todayFmt()}">Daily review: ${FORMATS[todayFmt()].name}</button>`:''}
     <button class="btn${any?'':' primary'}" data-act="level" data-i="${nextI}">${any?'Next up':'Start'}: ${LEVELS[nextI].title}</button>
-    <button class="btn" data-act="tab" data-v="arcade">${dailiesDone()===2?'Both daily challenges done · Arcade':`Daily challenges: ${dailiesDone()} of 2 done`}</button></div>
+    </div>
     ${S.missed.length?`<p class="note">${S.missed.length} missed ${S.missed.length===1?'question':'questions'} waiting in your review.</p>`:''}</section>
+    ${dailiesBlock()}
     <button class="fpcard" data-act="explore"><span class="eyebrow">No clock</span><span class="fph">Free play</span>
     <span class="fpd">Tap any fret to hear it, light up every C, or map a scale and its chords.</span></button>
     <h2 class="section">Your neck · 12 levels</h2><ol class="path">${rows}</ol>`;
@@ -1036,7 +1089,7 @@ function tipsView(){
 /* ---------- render + events ---------- */
 const app=document.getElementById('app'),nav=document.getElementById('nav');
 /* Last-updated stamp: bump UPDATED on every push */
-const UPDATED='2026-11-07T00:09:00-05:00';
+const UPDATED='2026-11-17T19:40:00-05:00';
 const stampHTML=()=>`<div class="stamp">Last updated ${new Date(UPDATED).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Detroit',timeZoneName:'short'})}</div>`;
 function render(toTop){
   const full=['lesson','result','game','gameover'].includes(view);
